@@ -47,7 +47,7 @@ function getBaseUpdate() {
   return -1;
 }
 
-// Returns { me, others, bullets }
+// Returns { me, others, bullets, castles }
 export function getCurrentState() {
   if (!firstServerTimestamp) {
     return {};
@@ -59,15 +59,22 @@ export function getCurrentState() {
   // If base is the most recent update we have, use its state.
   // Otherwise, interpolate between its state and the state of (base + 1).
   if (base < 0 || base === gameUpdates.length - 1) {
-    return gameUpdates[gameUpdates.length - 1];
+    const latestUpdate = gameUpdates[gameUpdates.length - 1];
+    return {
+      me: latestUpdate.me,
+      others: latestUpdate.others || [],
+      bullets: latestUpdate.bullets || [],
+      castles: latestUpdate.castles || [],
+    };
   } else {
     const baseUpdate = gameUpdates[base];
     const next = gameUpdates[base + 1];
     const ratio = (serverTime - baseUpdate.t) / (next.t - baseUpdate.t);
     return {
       me: interpolateObject(baseUpdate.me, next.me, ratio),
-      others: interpolateObjectArray(baseUpdate.others, next.others, ratio),
-      bullets: interpolateObjectArray(baseUpdate.bullets, next.bullets, ratio),
+      others: interpolateObjectArray(baseUpdate.others || [], next.others || [], ratio),
+      bullets: interpolateObjectArray(baseUpdate.bullets || [], next.bullets || [], ratio),
+      castles: next.castles || [],
     };
   }
 }
@@ -89,7 +96,10 @@ function interpolateObject(object1, object2, ratio) {
 }
 
 function interpolateObjectArray(objects1, objects2, ratio) {
-  return objects1.map(o => interpolateObject(o, objects2.find(o2 => o.id === o2.id), ratio));
+  return objects1.map(o => {
+    const corresponding = objects2.find(o2 => o2.id === o.id);
+    return corresponding ? interpolateObject(o, corresponding, ratio) : o;
+  });
 }
 
 // Determines the best way to rotate (cw or ccw) when interpolating a direction.

@@ -81,10 +81,11 @@ function update() {
   let dx = 0;
   let dy = 0;
 
-  if (keys['w'] || keys['W']) dy -= 1;
-  if (keys['s'] || keys['S']) dy += 1;
-  if (keys['a'] || keys['A']) dx -= 1;
-  if (keys['d'] || keys['D']) dx += 1;
+  // WASD and Arrow key controls
+  if (keys['w'] || keys['W'] || keys['ArrowUp']) dy -= 1;
+  if (keys['s'] || keys['S'] || keys['ArrowDown']) dy += 1;
+  if (keys['a'] || keys['A'] || keys['ArrowLeft']) dx -= 1;
+  if (keys['d'] || keys['D'] || keys['ArrowRight']) dx += 1;
 
   // Normalize diagonal movement
   if (dx !== 0 && dy !== 0) {
