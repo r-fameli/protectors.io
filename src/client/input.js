@@ -42,6 +42,10 @@ function onKeyDown(e) {
   }
 }
 
+function onKeyUp(e) {
+  keys[e.key] = false;
+}
+
 // Update the player's position based on input
 function update() {
   const state = getCurrentState();
@@ -112,10 +116,12 @@ function reset() {
 export function startCapturingInput() {
   // Handle keydown events
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
 }
 
 export function stopCapturingInput() {
   window.removeEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
 }
 
 export default {
