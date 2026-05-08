@@ -126,7 +126,7 @@ function renderCastle(me, castle) {
 
   // Draw castle
   context.drawImage(
-    getAsset('castle.png'),
+    getAsset('portal.png'),
     canvasX - 100,
     canvasY - 100,
     200,
