@@ -73,24 +73,7 @@ button:focus {
   outline: none;
 }
 
-#leaderboard {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(255, 255, 255, 0.5);
-  padding: 10px;
-  border-radius: 5px;
-}
 
-#leaderboard th {
-  text-align: center;
-  padding: 2px 5px;
-}
-
-#leaderboard td {
-  text-align: center;
-  padding: 2px 5px;
-}
 
 #disconnect-modal {
   position: fixed;
@@ -131,15 +114,5 @@ button:focus {
     min-width: 280px;
   }
 
-  #leaderboard th {
-    padding: 0 3px;
-  }
-
-  #leaderboard td {
-    padding: 0 3px;
-  }
-
-  #leaderboard table {
-    font-size: 14px;
-  }
+  
 }

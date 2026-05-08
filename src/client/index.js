@@ -4,7 +4,7 @@ import { startRendering } from "./render";
 import { startCapturingInput } from "./input";
 import { downloadAssets } from "./assets";
 import { initState } from "./state";
-import { setLeaderboardHidden } from "./leaderboard";
+
 
 import "./css/main.css";
 
@@ -22,6 +22,5 @@ Promise.all([connect(), downloadAssets()]).then(() => {
     initState();
     startCapturingInput();
     startRendering();
-    setLeaderboardHidden(false);
   };
 });
