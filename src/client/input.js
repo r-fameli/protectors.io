@@ -40,37 +40,6 @@ window.addEventListener('keyup', (e) => {
   keys[e.key] = false;
 });
 
-function onMouseInput(e) {
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  
-  // Calculate direction based on mouse position relative to center
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-  direction = Math.atan2(mouseX - centerX, centerY - mouseY);
-  
-  updateDirection(direction);
-}
-
-function onTouchInput(e) {
-  const touch = e.touches[0];
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = touch.clientX - rect.left;
-  const mouseY = touch.clientY - rect.top;
-  
-  // Calculate direction based on touch position relative to center
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-  direction = Math.atan2(mouseX - centerX, centerY - mouseY);
-  
-  updateDirection(direction);
-}
-
-function handleInput(x, y) {
-  const dir = Math.atan2(x - window.innerWidth / 2, window.innerHeight / 2 - y);
-  updateDirection(dir);
-}
 
 // Update the player's position based on input
 function update() {
@@ -82,10 +51,16 @@ function update() {
   let dy = 0;
 
   // WASD and Arrow key controls
-  if (keys['w'] || keys['W'] || keys['ArrowUp']) dy -= 1;
-  if (keys['s'] || keys['S'] || keys['ArrowDown']) dy += 1;
-  if (keys['a'] || keys['A'] || keys['ArrowLeft']) dx -= 1;
-  if (keys['d'] || keys['D'] || keys['ArrowRight']) dx += 1;
+  if (keys['w'] || keys['W'] || keys['ArrowUp']) dx += 1;
+  if (keys['d'] || keys['D'] || keys['ArrowRight']) dy -= 1;
+  if (keys['a'] || keys['A'] || keys['ArrowLeft']) dy += 1;
+  if (keys['s'] || keys['S'] || keys['ArrowDown']) dx -= 1;
+
+  // Calculate direction based on movement (only if moving)
+  if (dx !== 0 || dy !== 0) {
+    direction = Math.atan2(-dy, dx); // Negative dy for correct up/down
+    updateDirection(direction);
+  }
 
   // Normalize diagonal movement
   if (dx !== 0 && dy !== 0) {
@@ -111,7 +86,6 @@ function update() {
 
   // Send input to server if we've moved significantly
   if (Math.abs(lastPosition.x - state.me.x) > 1 || Math.abs(lastPosition.y - state.me.y) > 1) {
-    updateDirection(direction);
     lastServerUpdate = now;
   }
 }
@@ -132,20 +106,6 @@ function reset() {
   targetPosition = { x: 0, y: 0 };
   direction = 0;
   lastServerUpdate = Date.now;
-}
-
-export function startCapturingInput() {
-  window.addEventListener('mousemove', onMouseInput);
-  window.addEventListener('click', onMouseInput);
-  window.addEventListener('touchstart', onTouchInput);
-  window.addEventListener('touchmove', onTouchInput);
-}
-
-export function stopCapturingInput() {
-  window.removeEventListener('mousemove', onMouseInput);
-  window.removeEventListener('click', onMouseInput);
-  window.removeEventListener('touchstart', onTouchInput);
-  window.removeEventListener('touchmove', onTouchInput);
 }
 
 export default {
