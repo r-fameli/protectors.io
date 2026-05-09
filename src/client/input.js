@@ -121,7 +121,7 @@ export function startCapturingInput() {
 
 export function stopCapturingInput() {
   window.removeEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
+  window.removeEventListener('keyup', onKeyUp);
 }
 
 export default {
