@@ -31,9 +31,19 @@ class Game {
     delete this.players[socket.id];
   }
 
-  handleInput(socket, dir) {
+  handleInput(socket, data) {
     if (this.players[socket.id]) {
-      this.players[socket.id].setDirection(dir);
+      if (typeof data === 'number') {
+        this.players[socket.id].setDirection(data);
+        this.players[socket.id].setMoving(true);
+      } else if (data && typeof data === 'object') {
+        if (data.direction !== undefined) {
+          this.players[socket.id].setDirection(data.direction);
+        }
+        if (data.isMoving !== undefined) {
+          this.players[socket.id].setMoving(data.isMoving);
+        }
+      }
     }
   }
 

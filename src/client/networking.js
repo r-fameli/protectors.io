@@ -22,6 +22,7 @@ export const play = (username) => {
   socket.emit(Constants.MSG_TYPES.JOIN_GAME, username);
 };
 
-export const updateDirection = (dir) => {
-  socket.emit(Constants.MSG_TYPES.INPUT, dir);
+export const updateDirection = (dir, isMoving) => {
+  // Send both direction and movement state
+  socket.emit(Constants.MSG_TYPES.INPUT, { direction: dir, isMoving: isMoving });
 };

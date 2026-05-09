@@ -5,11 +5,14 @@ class Object {
     this.y = y;
     this.direction = dir;
     this.speed = speed;
+    this.isMoving = true;  // Default to moving for bullets and other objects
   }
 
   update(dt) {
-    this.x += dt * this.speed * Math.sin(this.direction);
-    this.y -= dt * this.speed * Math.cos(this.direction);
+    if (this.isMoving) {
+      this.x += dt * this.speed * Math.sin(this.direction);
+      this.y += dt * this.speed * Math.cos(this.direction);
+    }
   }
 
   distanceTo(object) {
@@ -20,6 +23,10 @@ class Object {
 
   setDirection(dir) {
     this.direction = dir;
+  }
+
+  setMoving(isMoving) {
+    this.isMoving = isMoving;
   }
 
   serializeForUpdate() {
