@@ -1,15 +1,19 @@
-const ObjectClass = require('./object');
-const Constants = require('../shared/constants');
+import GameObject from './object';
+import Constants from '../shared/constants';
 
-class Player extends ObjectClass {
-  constructor(id, username, x, y) {
+class Player extends GameObject {
+  username: string;
+  hp: number;
+  score: number;
+
+  constructor(id: string, username: string, x: number, y: number) {
     super(id, x, y, Math.random() * 2 * Math.PI, Constants.PLAYER_SPEED);
     this.username = username;
     this.hp = Constants.PLAYER_MAX_HP;
     this.score = 0;
   }
 
-  update(dt) {
+  update(dt: number) {
     super.update(dt);
     this.score += dt * Constants.SCORE_PER_SECOND;
     this.x = Math.max(0, Math.min(Constants.MAP_SIZE, this.x));
@@ -27,11 +31,11 @@ class Player extends ObjectClass {
 
   serializeForUpdate() {
     return {
-      ...(super.serializeForUpdate()),
+      ...super.serializeForUpdate(),
       direction: this.direction,
       hp: this.hp,
     };
   }
 }
 
-module.exports = Player;
+export default Player;

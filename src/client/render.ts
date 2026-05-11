@@ -1,17 +1,14 @@
-// Learn more about this file at:
-// https://victorzhou.com/blog/build-an-io-game-part-1/#5-client-rendering
 import { debounce } from 'throttle-debounce';
 import { getAsset } from './assets';
 import { getCurrentState } from './state';
 import input from './input';
 
-const Constants = require('../shared/constants');
+import Constants from '../shared/constants';
 
-const { PLAYER_RADIUS, PLAYER_MAX_HP, BULLET_RADIUS, MAP_SIZE } = Constants;
+const { PLAYER_RADIUS, BULLET_RADIUS, MAP_SIZE } = Constants;
 
-// Get the canvas graphics context
-const canvas = document.getElementById('game-canvas');
-const context = canvas.getContext('2d');
+const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+const context = canvas.getContext('2d')!;
 setCanvasDimensions();
 
 function setCanvasDimensions() {
@@ -24,19 +21,16 @@ function setCanvasDimensions() {
 
 window.addEventListener('resize', debounce(40, setCanvasDimensions));
 
-let animationFrameRequestId;
+let animationFrameRequestId: number;
 let showHitboxes = false;
 
 function render() {
-  // Update input state before rendering
   input.update();
-  
+
   const { me, others, bullets, portals } = getCurrentState();
   if (me) {
-    // Draw background
     renderBackground(me.x, me.y);
 
-    // Draw boundaries
     context.strokeStyle = 'black';
     context.lineWidth = 1;
     context.strokeRect(canvas.width / 2 - me.x, canvas.height / 2 - me.y, MAP_SIZE, MAP_SIZE);
@@ -45,31 +39,26 @@ function render() {
       portals.forEach(renderPortal.bind(null, me));
     }
 
-    // Draw all bullets
-    bullets.forEach(renderBullet.bind(null, me));
+    bullets!.forEach(renderBullet.bind(null, me));
 
-    // Draw all players
     renderPlayer(me, me);
-    others.forEach(renderPlayer.bind(null, me));
+    others!.forEach(renderPlayer.bind(null, me));
 
-    // Draw hitboxes if enabled
     if (showHitboxes) {
       if (portals) {
         portals.forEach(renderHitbox.bind(null, me));
       }
-      others.forEach(renderHitbox.bind(null, me));
+      others!.forEach(renderHitbox.bind(null, me));
       renderHitbox(me, me);
     }
 
-    // Draw minimap
-    renderMinimap(me, others, portals);
+    renderMinimap(me, others!, portals!);
   }
 
-  // Rerun this render function on the next frame
   animationFrameRequestId = requestAnimationFrame(render);
 }
 
-function renderBackground(x, y) {
+function renderBackground(x: number, y: number) {
   const backgroundX = MAP_SIZE / 2 - x + canvas.width / 2;
   const backgroundY = MAP_SIZE / 2 - y + canvas.height / 2;
   const backgroundGradient = context.createRadialGradient(
@@ -86,16 +75,21 @@ function renderBackground(x, y) {
   context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// Renders Player at the given coordinates
-function renderPlayer(me, player) {
+interface RenderObject {
+  x: number;
+  y: number;
+  direction?: number;
+  radius?: number;
+}
+
+function renderPlayer(me: RenderObject, player: RenderObject) {
   const { x, y, direction } = player;
   const canvasX = canvas.width / 2 + x - me.x;
   const canvasY = canvas.height / 2 + y - me.y;
 
-  // Draw player
   context.save();
   context.translate(canvasX, canvasY);
-  context.rotate(direction);
+  context.rotate(direction!);
   context.drawImage(
     getAsset('player.png'),
     -PLAYER_RADIUS,
@@ -104,11 +98,9 @@ function renderPlayer(me, player) {
     PLAYER_RADIUS * 2,
   );
   context.restore();
-
-  
 }
 
-function renderPortal(me, portal) {
+function renderPortal(me: RenderObject, portal: RenderObject) {
   const { x, y } = portal;
   const canvasX = canvas.width / 2 + x - me.x;
   const canvasY = canvas.height / 2 + y - me.y;
@@ -122,10 +114,10 @@ function renderPortal(me, portal) {
   );
 }
 
-function renderHitbox(me, object) {
+function renderHitbox(me: RenderObject, object: RenderObject) {
   const { x, y } = object;
   let radius = PLAYER_RADIUS;
-  
+
   if (object.radius) {
     radius = object.radius;
   }
@@ -133,7 +125,6 @@ function renderHitbox(me, object) {
   const canvasX = canvas.width / 2 + x - me.x;
   const canvasY = canvas.height / 2 + y - me.y;
 
-  // Draw hitbox outline
   context.strokeStyle = 'rgba(255, 0, 0, 0.5)';
   context.lineWidth = 2;
   context.beginPath();
@@ -141,7 +132,7 @@ function renderHitbox(me, object) {
   context.stroke();
 }
 
-function renderBullet(me, bullet) {
+function renderBullet(me: RenderObject, bullet: RenderObject) {
   const { x, y } = bullet;
   context.drawImage(
     getAsset('bullet.svg'),
@@ -152,17 +143,15 @@ function renderBullet(me, bullet) {
   );
 }
 
-function renderMinimap(me, others, portals) {
+function renderMinimap(me: RenderObject, others: RenderObject[], portals: RenderObject[]) {
   const minimapSize = 150;
   const minimapX = canvas.width - minimapSize - 10;
   const minimapY = canvas.height - minimapSize - 10;
   const scale = minimapSize / MAP_SIZE;
 
-  // Draw minimap background
   context.fillStyle = 'black';
   context.fillRect(minimapX, minimapY, minimapSize, minimapSize);
 
-  // Draw minimap border
   context.strokeStyle = 'white';
   context.lineWidth = 2;
   context.strokeRect(minimapX, minimapY, minimapSize, minimapSize);
@@ -180,21 +169,19 @@ function renderMinimap(me, others, portals) {
     context.fill();
   }
 
-  // Draw other players as green dots
   others.forEach(player => {
     const minimapPlayerX = minimapX + player.x * scale;
     const minimapPlayerY = minimapY + player.y * scale;
-    
+
     context.fillStyle = 'green';
     context.beginPath();
     context.arc(minimapPlayerX, minimapPlayerY, 2, 0, 2 * Math.PI);
     context.fill();
   });
 
-  // Draw player as white dot
   const minimapPlayerX = minimapX + me.x * scale;
   const minimapPlayerY = minimapY + me.y * scale;
-  
+
   context.fillStyle = 'white';
   context.beginPath();
   context.arc(minimapPlayerX, minimapPlayerY, 3, 0, 2 * Math.PI);
@@ -207,30 +194,25 @@ function renderMainMenu() {
   const y = MAP_SIZE / 2 + 800 * Math.sin(t);
   renderBackground(x, y);
 
-  // Rerun this render function on the next frame
   animationFrameRequestId = requestAnimationFrame(renderMainMenu);
 }
 
 animationFrameRequestId = requestAnimationFrame(renderMainMenu);
 
-// Replaces main menu rendering with game rendering.
 export function startRendering() {
   cancelAnimationFrame(animationFrameRequestId);
   animationFrameRequestId = requestAnimationFrame(render);
 }
 
-// Replaces game rendering with main menu rendering.
 export function stopRendering() {
   cancelAnimationFrame(animationFrameRequestId);
   animationFrameRequestId = requestAnimationFrame(renderMainMenu);
 }
 
-// Toggle hitbox visibility
 export function toggleHitboxes() {
   showHitboxes = !showHitboxes;
 }
 
-// Check if hitboxes are currently visible
-export function areHitboxesVisible() {
+export function areHitboxesVisible(): boolean {
   return showHitboxes;
 }

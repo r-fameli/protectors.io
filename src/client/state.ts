@@ -1,12 +1,42 @@
-// Learn more about this file at:
-// https://victorzhou.com/blog/build-an-io-game-part-1/#7-client-state
-
-
-// The "current" state will always be RENDER_DELAY ms behind server time.
-// This makes gameplay smoother and lag less noticeable.
 const RENDER_DELAY = 100;
 
-const gameUpdates = [];
+interface ServerUpdate {
+  t: number;
+  me: PlayerState;
+  others: PlayerState[];
+  bullets: BulletState[];
+  portals: PortalState[];
+}
+
+interface PlayerState {
+  id: string;
+  x: number;
+  y: number;
+  direction: number;
+  hp: number;
+}
+
+interface BulletState {
+  id: string;
+  x: number;
+  y: number;
+}
+
+interface PortalState {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+}
+
+interface GameState {
+  me?: PlayerState;
+  others?: PlayerState[];
+  bullets?: BulletState[];
+  portals?: PortalState[];
+}
+
+const gameUpdates: ServerUpdate[] = [];
 let gameStart = 0;
 let firstServerTimestamp = 0;
 
@@ -15,29 +45,24 @@ export function initState() {
   firstServerTimestamp = 0;
 }
 
-export function processGameUpdate(update) {
+export function processGameUpdate(update: ServerUpdate) {
   if (!firstServerTimestamp) {
     firstServerTimestamp = update.t;
     gameStart = Date.now();
   }
   gameUpdates.push(update);
 
-  
-
-  // Keep only one game update before the current server time
   const base = getBaseUpdate();
   if (base > 0) {
     gameUpdates.splice(0, base);
   }
 }
 
-function currentServerTime() {
+function currentServerTime(): number {
   return firstServerTimestamp + (Date.now() - gameStart) - RENDER_DELAY;
 }
 
-// Returns the index of the base update, the first game update before
-// current server time, or -1 if N/A.
-function getBaseUpdate() {
+function getBaseUpdate(): number {
   const serverTime = currentServerTime();
   for (let i = gameUpdates.length - 1; i >= 0; i--) {
     if (gameUpdates[i].t <= serverTime) {
@@ -47,8 +72,7 @@ function getBaseUpdate() {
   return -1;
 }
 
-// Returns { me, others, bullets, portals }
-export function getCurrentState() {
+export function getCurrentState(): GameState {
   if (!firstServerTimestamp) {
     return {};
   }
@@ -56,8 +80,6 @@ export function getCurrentState() {
   const base = getBaseUpdate();
   const serverTime = currentServerTime();
 
-  // If base is the most recent update we have, use its state.
-  // Otherwise, interpolate between its state and the state of (base + 1).
   if (base < 0 || base === gameUpdates.length - 1) {
     const latestUpdate = gameUpdates[gameUpdates.length - 1];
     return {
@@ -79,43 +101,38 @@ export function getCurrentState() {
   }
 }
 
-function interpolateObject(object1, object2, ratio) {
+function interpolateObject<T>(object1: T, object2: T | undefined, ratio: number): T {
   if (!object2) {
     return object1;
   }
 
-  const interpolated = {};
-  Object.keys(object1).forEach(key => {
+  const interpolated: Record<string, unknown> = {};
+  (Object.keys(object1 as Record<string, unknown>)).forEach(key => {
     if (key === 'direction') {
-      interpolated[key] = interpolateDirection(object1[key], object2[key], ratio);
+      interpolated[key] = interpolateDirection((object1 as Record<string, number>)[key], (object2 as Record<string, number>)[key], ratio);
     } else {
-      interpolated[key] = object1[key] + (object2[key] - object1[key]) * ratio;
+      interpolated[key] = (object1 as Record<string, number>)[key] + ((object2 as Record<string, number>)[key] - (object1 as Record<string, number>)[key]) * ratio;
     }
   });
-  return interpolated;
+  return interpolated as unknown as T;
 }
 
-function interpolateObjectArray(objects1, objects2, ratio) {
+function interpolateObjectArray<T extends { id: string }>(objects1: T[], objects2: T[], ratio: number): T[] {
   return objects1.map(o => {
     const corresponding = objects2.find(o2 => o2.id === o.id);
     return corresponding ? interpolateObject(o, corresponding, ratio) : o;
   });
 }
 
-// Determines the best way to rotate (cw or ccw) when interpolating a direction.
-// For example, when rotating from -3 radians to +3 radians, we should really rotate from
-// -3 radians to +3 - 2pi radians.
-function interpolateDirection(d1, d2, ratio) {
+function interpolateDirection(d1: number, d2: number, ratio: number): number {
   const absD = Math.abs(d2 - d1);
   if (absD >= Math.PI) {
-    // The angle between the directions is large - we should rotate the other way
     if (d1 > d2) {
       return d1 + (d2 + 2 * Math.PI - d1) * ratio;
     } else {
-      return d1 - (d2 - 2 * Math.PI - d1) * ratio;
+      return d1 + (d2 - 2 * Math.PI - d1) * ratio;
     }
   } else {
-    // Normal interp
     return d1 + (d2 - d1) * ratio;
   }
 }

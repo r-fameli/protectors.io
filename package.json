@@ -2,12 +2,10 @@
   "name": "stronghold-survivors",
   "version": "0.1.0",
   "description": "",
-  "main": "src/server/server.js",
   "scripts": {
-    "build": "webpack --config webpack.prod.js",
-    "lint": "eslint --cache --ext .js,.jsx src/",
-    "dev": "cross-env NODE_ENV=development node src/server/server.js",
-    "start": "cross-env NODE_ENV=production node src/server/server.js",
+    "build": "tsc && webpack --config webpack.prod.js",
+    "dev": "cross-env NODE_ENV=development ts-node src/server/server.ts",
+    "start": "tsc && cross-env NODE_ENV=production node dist/server/server.js",
     "test": "jest"
   },
   "author": "Riki Fameli",
@@ -25,6 +23,9 @@
   "devDependencies": {
     "@babel/core": "^7.10.2",
     "@babel/preset-env": "^7.10.2",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.7.0",
+    "@types/webpack": "^4.41.40",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
     "cross-env": "^5.2.1",
@@ -36,6 +37,9 @@
     "jest": "^25.1.0",
     "mini-css-extract-plugin": "^0.6.0",
     "optimize-css-assets-webpack-plugin": "^5.0.8",
+    "ts-loader": "^8.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3",
     "webpack-cli": "^3.3.11",
     "webpack-merge": "^4.2.2"
   }

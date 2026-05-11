@@ -4,15 +4,14 @@ const ASSET_NAMES = [
   'player.png',
 ];
 
-const assets = {};
+const assets: Record<string, HTMLImageElement> = {};
 
 const downloadPromise = Promise.all(ASSET_NAMES.map(downloadAsset));
 
-function downloadAsset(assetName) {
+function downloadAsset(assetName: string): Promise<void> {
   return new Promise(resolve => {
     const asset = new Image();
     asset.onload = () => {
-      console.log(`Downloaded ${assetName}`);
       assets[assetName] = asset;
       resolve();
     };
@@ -22,4 +21,4 @@ function downloadAsset(assetName) {
 
 export const downloadAssets = () => downloadPromise;
 
-export const getAsset = assetName => assets[assetName];
+export const getAsset = (assetName: string): HTMLImageElement => assets[assetName];
