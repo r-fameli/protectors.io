@@ -10,8 +10,8 @@ class Object {
 
   update(dt) {
     if (this.isMoving) {
-      this.x += dt * this.speed * Math.sin(this.direction);
-      this.y += dt * this.speed * Math.cos(this.direction);
+      this.x += dt * this.speed * Math.cos(this.direction);
+      this.y += dt * this.speed * Math.sin(this.direction);
     }
   }
 

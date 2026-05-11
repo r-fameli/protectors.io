@@ -47,11 +47,11 @@ function update() {
   let dx = 0;
   let dy = 0;
 
-  // WASD and Arrow key controls (sprite faces down)
-  if (keys["a"] || keys["A"] || keys["ArrowLeft"]) dy += 1;  // W = up (increase Y when sprite faces down)
-  if (keys["w"] || keys["W"] || keys["ArrowUp"]) dx -= 1;  // D = right (decrease X when sprite faces down)
-  if (keys["s"] || keys["S"] || keys["ArrowDown"]) dx += 1;  // A = left (increase X when sprite faces down)
-  if (keys["d"] || keys["D"] || keys["ArrowRight"]) dy -= 1;  // S = down (decrease Y when sprite faces down)
+  // WASD and Arrow key controls
+  if (keys["w"] || keys["W"] || keys["ArrowUp"]) dy -= 1;
+  if (keys["s"] || keys["S"] || keys["ArrowDown"]) dy += 1;
+  if (keys["a"] || keys["A"] || keys["ArrowLeft"]) dx -= 1;
+  if (keys["d"] || keys["D"] || keys["ArrowRight"]) dx += 1;
 
   // Check if we're moving
   const wasMoving = isMoving;
@@ -59,7 +59,7 @@ function update() {
 
   // Calculate direction based on movement
   if (isMoving) {
-    direction = Math.atan2(-dy, dx); // Negative dy for correct up/down
+    direction = Math.atan2(dy, dx);
     updateDirection(direction, isMoving);
   } else if (wasMoving) {
     // Just stopped moving, send stop signal
