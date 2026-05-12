@@ -19,8 +19,31 @@ function setCanvasDimensions() {
 
 window.addEventListener('resize', debounce(40, setCanvasDimensions));
 
+const RENDER_DIST = MAP_SIZE / 2;
+
 let animationFrameRequestId: number;
 let showHitboxes = false;
+
+function sqDist(a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy;
+}
+
+function isNear(me: { x: number; y: number }, obj: { x: number; y: number }): boolean {
+  return sqDist(me, obj) < RENDER_DIST * RENDER_DIST;
+}
+
+function forEachNearby<T extends { x: number; y: number }>(
+  me: { x: number; y: number },
+  items: T[] | undefined,
+  fn: (me: { x: number; y: number }, item: T) => void,
+) {
+  if (!items) return;
+  items.forEach(item => {
+    if (isNear(me, item)) fn(me, item);
+  });
+}
 
 function render() {
   input.update();
@@ -37,28 +60,21 @@ function render() {
       portals.forEach(renderPortal.bind(null, me));
     }
 
-    if (turrets) {
-      turrets.forEach(renderTurret.bind(null, me));
-    }
-
-    bullets!.forEach(renderBullet.bind(null, me));
+    forEachNearby(me, turrets, renderTurret);
+    forEachNearby(me, bullets, renderBullet);
 
     renderPlayer(me, me);
-    others!.forEach(renderPlayer.bind(null, me));
+    forEachNearby(me, others, renderPlayer);
 
-    if (angels) {
-      angels.forEach(renderAngel.bind(null, me));
-    }
+    forEachNearby(me, angels, renderAngel);
 
     if (showHitboxes) {
-      if (portals) {
-        portals.forEach(renderHitbox.bind(null, me));
-      }
-      others!.forEach(renderHitbox.bind(null, me));
-      renderHitbox(me, me);
+      forEachNearby(me, portals, renderHitbox);
+      forEachNearby(me, others, renderHitbox);
+      if (isNear(me, me)) renderHitbox(me, me);
     }
 
-    renderMinimap(me, others!, portals!, angels!);
+    renderMinimap(me, others!, portals!, angels!, turrets);
   }
 
   animationFrameRequestId = requestAnimationFrame(render);
@@ -143,7 +159,7 @@ function renderTurret(me: RenderObject, turret: RenderObject) {
   );
   context.restore();
 
-  // Head — sprite faces right, game angle convention (0 = right)
+  // Head — sprite faces right
   context.save();
   context.translate(canvasX, canvasY);
   context.rotate(aimDirection || 0);
@@ -233,7 +249,7 @@ function renderBullet(me: RenderObject, bullet: RenderObject) {
   );
 }
 
-function renderMinimap(me: RenderObject, others: RenderObject[], portals: RenderObject[], angels: RenderObject[]) {
+function renderMinimap(me: RenderObject, others: RenderObject[], portals: RenderObject[], angels: RenderObject[], turrets?: RenderObject[]) {
   const minimapSize = 150;
   const minimapX = canvas.width - minimapSize - 10;
   const minimapY = canvas.height - minimapSize - 10;
@@ -276,6 +292,17 @@ function renderMinimap(me: RenderObject, others: RenderObject[], portals: Render
       context.fillStyle = 'yellow';
       context.beginPath();
       context.arc(minimapAngelX, minimapAngelY, 2, 0, 2 * Math.PI);
+      context.fill();
+    });
+  }
+
+  if (turrets) {
+    turrets.forEach(turret => {
+      const minimapTurretX = minimapX + turret.x * scale;
+      const minimapTurretY = minimapY + turret.y * scale;
+      context.fillStyle = '#4488ff';
+      context.beginPath();
+      context.arc(minimapTurretX, minimapTurretY, 2, 0, 2 * Math.PI);
       context.fill();
     });
   }
