@@ -1,4 +1,4 @@
-import shortid from 'shortid';
+import { randomUUID } from 'crypto';
 import GameObject from './object';
 import Constants from '../shared/constants';
 
@@ -7,7 +7,7 @@ class Bullet extends GameObject {
   damage: number;
 
   constructor(parentID: string, x: number, y: number, dir: number, damage: number = Constants.BULLET_DAMAGE) {
-    super(shortid(), x, y, dir, Constants.BULLET_SPEED);
+    super(randomUUID(), x, y, dir, Constants.BULLET_SPEED);
     this.parentID = parentID;
     this.damage = damage;
   }
