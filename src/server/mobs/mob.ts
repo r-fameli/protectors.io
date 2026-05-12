@@ -1,5 +1,5 @@
 import GameObject from "../object";
-import { MobConfig } from "./mob-configs";
+import { MobConfig } from "../../shared/mob-configs";
 
 class Mob extends GameObject {
   hp: number;

@@ -1,5 +1,5 @@
 import GameObject from "../object";
-import { TurretConfig } from "./weapon-configs";
+import { TurretConfig } from "../../shared/weapon-configs";
 
 class Turret extends GameObject {
   spawnTime: number;

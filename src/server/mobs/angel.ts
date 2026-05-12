@@ -1,5 +1,5 @@
 import Mob from "./mob";
-import { ANGEL } from "./mob-configs";
+import { ANGEL } from "../../shared/mob-configs";
 
 class Angel extends Mob {
   constructor(id: string, x: number, y: number, targetX: number, targetY: number) {

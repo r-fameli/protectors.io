@@ -4,8 +4,8 @@ import Portal from "./portal";
 import Bullet from "./bullet";
 import Angel from "./mobs/angel";
 import Turret from "./weapons/turret";
-import { BasicTurretConfig } from "./weapons/weapon-configs";
-import { ANGEL as ANGEL_CONFIG } from "./mobs/mob-configs";
+import { BasicTurretConfig } from "../shared/weapon-configs";
+import { ANGEL as ANGEL_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 
 function randomBoundaryPosition(): { x: number; y: number } {
@@ -166,7 +166,7 @@ class Game {
       turret.fireCooldown -= dt * 1000;
       if (closest && turret.fireCooldown <= 0) {
         turret.fireCooldown += turret.fireCdInterval;
-        this.bullets.push(new Bullet(turret.id, turret.x, turret.y, turret.aimDirection, 50));
+        this.bullets.push(new Bullet(turret.id, turret.x, turret.y, turret.aimDirection, BasicTurretConfig.DAMAGE));
       }
     });
 
