@@ -194,6 +194,35 @@ class Game {
       (bullet) => !destroyedBullets.includes(bullet),
     );
 
+    // Exp orbs — attract toward nearest player and consume on contact
+    const ATTRACT_RADIUS = 300;
+    const ATTRACT_SPEED = 200;
+
+    const consumedOrbs: ExpOrb[] = [];
+    this.expOrbs.forEach(orb => {
+      let closest: Player | null = null;
+      let closestDist = ATTRACT_RADIUS;
+
+      for (const player of Object.values(this.players)) {
+        const dist = orb.distanceTo(player);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = player;
+        }
+      }
+
+      if (closest) {
+        const angle = Math.atan2(closest.y - orb.y, closest.x - orb.x);
+        orb.x += Math.cos(angle) * ATTRACT_SPEED * dt;
+        orb.y += Math.sin(angle) * ATTRACT_SPEED * dt;
+
+        if (orb.distanceTo(closest) < Constants.PLAYER_RADIUS) {
+          consumedOrbs.push(orb);
+        }
+      }
+    });
+    this.expOrbs = this.expOrbs.filter(o => !consumedOrbs.includes(o));
+
     // Send game updates
     if (this.shouldSendUpdate) {
       Object.keys(this.sockets).forEach((playerID) => {
