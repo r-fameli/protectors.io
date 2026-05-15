@@ -11,8 +11,8 @@ export interface TurretConfig extends BaseWeaponConfig {
 }
 
 export const BasicTurretConfig: TurretConfig = {
-    COOLDOWN: 2000,
-    DURATION: 20000,
+    COOLDOWN: 4000,
+    DURATION: 80000,
     RADIUS: 20,
     ATTACK_RADIUS: 200,
     FIRE_COOLDOWN: 3000,
