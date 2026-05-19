@@ -26,5 +26,5 @@ export const CANVAS_YELLOW = 'yellow';
 
 // ── Background gradient ─────────────────────────────────────
 
-export const GRADIENT_CENTER = 'black';
-export const GRADIENT_EDGE = 'gray';
+export const GRADIENT_CENTER = '#320202ff';
+export const GRADIENT_EDGE = '#545855ff';

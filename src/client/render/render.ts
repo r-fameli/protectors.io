@@ -39,6 +39,7 @@ function renderBackground(x: number, y: number) {
     backgroundX, backgroundY, MAP_SIZE / 2,
   );
   backgroundGradient.addColorStop(0, GRADIENT_CENTER);
+  backgroundGradient.addColorStop(0.4, GRADIENT_EDGE);
   backgroundGradient.addColorStop(1, GRADIENT_EDGE);
   context.fillStyle = backgroundGradient;
   context.fillRect(0, 0, canvas.width, canvas.height);
