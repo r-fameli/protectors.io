@@ -61,6 +61,11 @@ class Game {
   removePlayer(socket: import("socket.io").Socket) {
     delete this.sockets[socket.id];
     delete this.players[socket.id];
+
+    // Reset game when all players leave
+    if (Object.keys(this.sockets).length === 0) {
+      this.resetGameState();
+    }
   }
 
   handleInput(socket: import("socket.io").Socket, data: { direction?: number; isMoving?: boolean } | number) {
@@ -94,6 +99,9 @@ class Game {
     const now = Date.now();
     const dt = (now - this.lastUpdateTime) / 1000;
     this.lastUpdateTime = now;
+
+    // Don't simulate when no players are connected
+    if (Object.keys(this.sockets).length === 0) return;
 
     // Spawn angels
     this.angelSpawnTimer += dt;
