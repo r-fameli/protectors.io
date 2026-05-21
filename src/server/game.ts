@@ -179,8 +179,11 @@ class Game {
 
       turret.fireCooldown -= dt * 1000;
       if (closest && turret.fireCooldown <= 0) {
-        turret.fireCooldown += turret.fireCdInterval;
+        turret.fireCooldown = turret.fireCdInterval;
         this.bullets.push(new Bullet(turret.id, turret.x, turret.y, turret.aimDirection, BasicTurretConfig.DAMAGE));
+      } else if (!closest) {
+        // Idle — prevent negative accumulation that causes burst when target appears
+        turret.fireCooldown = 0;
       }
     });
 
