@@ -26,7 +26,7 @@ const Constants: ConstantsType = Object.freeze({
   BULLET_SPEED: 800,
   BULLET_DAMAGE: 10,
   SCORE_PER_SECOND: 1,
-  MAP_SIZE: 3000,
+  MAP_SIZE: 4000,
   PORTAL_MAX_HP: 1000,
   MSG_TYPES: {
     JOIN_GAME: 'join_game',

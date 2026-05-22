@@ -2,11 +2,13 @@ import Constants from "../shared/constants";
 import Player from "./player";
 import Portal from "./portal";
 import Bullet from "./bullet";
+import Mob from "./mobs/mob";
 import Angel from "./mobs/angel";
+import Paladin from "./mobs/paladin";
 import Turret from "./weapons/turret";
 import ExpOrb from "./exp-orb";
 import { BasicTurretConfig } from "../shared/weapon-configs";
-import { ANGEL as ANGEL_CONFIG } from "../shared/mob-configs";
+import { ANGEL as ANGEL_CONFIG, PALADIN as PALADIN_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 
 function randomBoundaryPosition(): { x: number; y: number } {
@@ -25,26 +27,30 @@ class Game {
   players: Record<string, Player>;
   portals: Portal[];
   bullets: Bullet[];
-  angels: Angel[];
+  mobs: Mob[];
   turrets: Turret[];
   expOrbs: ExpOrb[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
   angelSpawnTimer: number;
   angelIdCounter: number;
+  paladinSpawnTimer: number;
+  paladinIdCounter: number;
 
   constructor() {
     this.sockets = {};
     this.players = {};
     this.portals = [];
     this.bullets = [];
-    this.angels = [];
+    this.mobs = [];
     this.turrets = [];
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
     this.angelSpawnTimer = 0;
     this.angelIdCounter = 0;
+    this.paladinSpawnTimer = 0;
+    this.paladinIdCounter = 0;
     setInterval(this.update.bind(this), 1000 / 60);
 
     this.portals.push(new Portal('portal', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
@@ -92,7 +98,18 @@ class Game {
       pos.x, pos.y,
       Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
     );
-    this.angels.push(angel);
+    this.mobs.push(angel);
+  }
+
+  spawnPaladin() {
+    const pos = randomBoundaryPosition();
+    this.paladinIdCounter++;
+    const paladin = new Paladin(
+      `paladin_${this.paladinIdCounter}`,
+      pos.x, pos.y,
+      Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
+    );
+    this.mobs.push(paladin);
   }
 
   update() {
@@ -108,6 +125,13 @@ class Game {
     while (this.angelSpawnTimer >= ANGEL_CONFIG.BASE_SPAWN_INTERVAL) {
       this.angelSpawnTimer -= ANGEL_CONFIG.BASE_SPAWN_INTERVAL;
       this.spawnAngel();
+    }
+
+    // Spawn paladins
+    this.paladinSpawnTimer += dt;
+    while (this.paladinSpawnTimer >= PALADIN_CONFIG.BASE_SPAWN_INTERVAL) {
+      this.paladinSpawnTimer -= PALADIN_CONFIG.BASE_SPAWN_INTERVAL;
+      this.spawnPaladin();
     }
 
     // Update bullets
@@ -155,30 +179,31 @@ class Game {
       }
     });
 
-    // Update angels — damage portal when one reaches it
-    const reachedAngels: Angel[] = [];
-    this.angels = this.angels.filter(angel => {
-      const reached = angel.update(dt);
-      if (reached) reachedAngels.push(angel);
+    // Update mobs — damage portal when one reaches it
+    const reachedMobs: Mob[] = [];
+    this.mobs = this.mobs.filter(mob => {
+      const reached = mob.update(dt);
+      if (reached) reachedMobs.push(mob);
       return !reached;
     });
-    reachedAngels.forEach(angel => {
-      this.portals.forEach(p => p.takeDamage(angel.maxHp));
+    reachedMobs.forEach(mob => {
+      this.portals.forEach(p => p.takeDamage(mob.maxHp));
     });
 
     // Remove expired turrets
     this.turrets = this.turrets.filter(t => !t.update(dt));
 
-    // Turrets aim at closest angel + fire
+    // Turrets aim at closest mob + fire
     this.turrets.forEach(turret => {
-      let closest: Angel | null = null;
+      interface Target { x: number; y: number; hp: number; }
+      let closest: Target | null = null;
       let closestDist = turret.attackRadius;
-      for (const angel of this.angels) {
-        if (angel.hp <= 0) continue;
-        const d = turret.distanceTo(angel);
+      for (const mob of this.mobs) {
+        if (mob.hp <= 0) continue;
+        const d = turret.distanceTo(mob);
         if (d <= closestDist) {
           closestDist = d;
-          closest = angel;
+          closest = mob;
         }
       }
       turret.aimDirection = closest
@@ -200,15 +225,15 @@ class Game {
       Object.values(this.players),
       this.bullets,
       this.portals,
-      this.angels,
+      this.mobs,
     );
 
-    // Remove angels killed by bullets — drop exp orb at death location
-    const deadAngels = this.angels.filter(angel => angel.hp <= 0);
-    deadAngels.forEach(angel => {
-      this.expOrbs.push(new ExpOrb(`exp_${angel.id}`, angel.x, angel.y));
+    // Remove mobs killed by bullets — drop exp orb at death location
+    const deadMobs = this.mobs.filter(mob => mob.hp <= 0);
+    deadMobs.forEach(mob => {
+      this.expOrbs.push(new ExpOrb(`exp_${mob.id}`, mob.x, mob.y));
     });
-    this.angels = this.angels.filter(angel => angel.hp > 0);
+    this.mobs = this.mobs.filter(mob => mob.hp > 0);
     this.bullets = this.bullets.filter(
       (bullet) => !destroyedBullets.includes(bullet),
     );
@@ -266,12 +291,14 @@ class Game {
   }
 
   resetGameState() {
-    this.angels = [];
+    this.mobs = [];
     this.bullets = [];
     this.turrets = [];
     this.expOrbs = [];
     this.angelSpawnTimer = 0;
     this.angelIdCounter = 0;
+    this.paladinSpawnTimer = 0;
+    this.paladinIdCounter = 0;
     this.portals = [new Portal('portal', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
   }
@@ -293,7 +320,7 @@ class Game {
     const nearbyBullets = this.bullets.filter(
       (b) => b.distanceTo(player) <= Constants.MAP_SIZE / 2,
     );
-    const nearbyAngels = this.angels;
+    const nearbyMobs = this.mobs;
     const nearbyTurrets = this.turrets;
     const nearbyExpOrbs = this.expOrbs.filter(
       (e) => e.distanceTo(player) <= Constants.MAP_SIZE / 2,
@@ -304,7 +331,7 @@ class Game {
       others: nearbyPlayers.map((p) => p.serializeForUpdate()),
       bullets: nearbyBullets.map((b) => b.serializeForUpdate()),
       portals: this.portals.map((p) => p.serializeForUpdate()),
-      angels: nearbyAngels.map((a) => a.serializeForUpdate()),
+      mobs: nearbyMobs.map((m) => m.serializeForUpdate()),
       turrets: nearbyTurrets.map((t) => t.serializeForUpdate()),
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
     };

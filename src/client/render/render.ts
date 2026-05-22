@@ -5,7 +5,7 @@ import input from '../input';
 import { canvas, context, MAP_SIZE, RenderObject, isNear, forEachNearby } from './common';
 import { HITBOX_STROKE, CANVAS_BLACK, GRADIENT_CENTER, GRADIENT_EDGE } from '../colors';
 import { renderPlayer } from './player';
-import { renderAngel } from './angel';
+import { renderMob } from './mob';
 import { renderTurret } from './turret';
 import { renderPortal, renderPortalHP } from './portal';
 import { renderBullet } from './bullet';
@@ -65,7 +65,7 @@ function renderHitbox(me: RenderObject, object: RenderObject) {
 function render() {
   input.update();
 
-  const { me, others, bullets, portals, angels, turrets, expOrbs } = getCurrentState();
+  const { me, others, bullets, portals, mobs, turrets, expOrbs } = getCurrentState();
   if (me) {
     renderBackground(me.x, me.y);
 
@@ -88,7 +88,7 @@ function render() {
     renderPlayer(me, me);
     forEachNearby(me, others, renderPlayer);
 
-    forEachNearby(me, angels, renderAngel);
+    forEachNearby(me, mobs, renderMob);
     forEachNearby(me, expOrbs, renderExpOrb);
 
     if (showHitboxes) {
@@ -97,7 +97,7 @@ function render() {
       if (isNear(me, me)) renderHitbox(me, me);
     }
 
-    renderMinimap(me, others!, portals!, angels!, turrets);
+    renderMinimap(me, others!, portals!, mobs || [], turrets);
     renderTurretCooldown(me);
     renderExpBar(me);
     if (portals && portals.length > 0) {

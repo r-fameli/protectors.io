@@ -15,22 +15,22 @@ function applyCollisions(
   players: Collidable[],
   bullets: Collidable[],
   portals: Collidable[],
-  angels: Collidable[],
+  mobs: Collidable[],
 ): Collidable[] {
   const destroyedBullets: Collidable[] = [];
 
-  // Bullet vs angels
+  // Bullet vs mobs
   for (let i = 0; i < bullets.length; i++) {
     if (destroyedBullets.includes(bullets[i])) continue;
-    for (let j = 0; j < angels.length; j++) {
+    for (let j = 0; j < mobs.length; j++) {
       const bullet = bullets[i];
-      const angel = angels[j];
+      const mob = mobs[j];
       if (
-        bullet.parentID !== angel.id &&
-        angel.distanceTo(bullet) <= (angel.radius || 20) + Constants.BULLET_RADIUS
+        bullet.parentID !== mob.id &&
+        mob.distanceTo(bullet) <= (mob.radius || 20) + Constants.BULLET_RADIUS
       ) {
         destroyedBullets.push(bullet);
-        angel.takeDamage!(bullet.damage || Constants.BULLET_DAMAGE);
+        mob.takeDamage!(bullet.damage || Constants.BULLET_DAMAGE);
         break;
       }
     }

@@ -1,12 +1,17 @@
 import { context } from './common';
 import { MAP_SIZE, RenderObject } from './common';
-import { CANVAS_BLACK, CANVAS_WHITE, CANVAS_BLUE, CANVAS_GREEN, CANVAS_YELLOW, MINIMAP_TURRET } from '../colors';
+import { CANVAS_BLACK, CANVAS_WHITE, CANVAS_BLUE, CANVAS_GREEN, CANVAS_YELLOW, MINIMAP_TURRET, RED_HP } from '../colors';
+
+const MOB_MINIMAP_COLORS: Record<string, string> = {
+  angel: CANVAS_YELLOW,
+  paladin: RED_HP,
+};
 
 export function renderMinimap(
   me: RenderObject,
   others: RenderObject[],
   portals: RenderObject[],
-  angels: RenderObject[],
+  mobs: RenderObject[],
   turrets?: RenderObject[],
 ) {
   const minimapSize = 150;
@@ -46,14 +51,14 @@ export function renderMinimap(
     context.fill();
   });
 
-  // Angels
-  if (angels) {
-    angels.forEach(angel => {
-      context.fillStyle = CANVAS_YELLOW;
+  // Mobs
+  if (mobs) {
+    mobs.forEach(mob => {
+      context.fillStyle = MOB_MINIMAP_COLORS[mob.mobType || ''] || CANVAS_YELLOW;
       context.beginPath();
       context.arc(
-        minimapX + angel.x * scale,
-        minimapY + angel.y * scale,
+        minimapX + mob.x * scale,
+        minimapY + mob.y * scale,
         2, 0, 2 * Math.PI,
       );
       context.fill();

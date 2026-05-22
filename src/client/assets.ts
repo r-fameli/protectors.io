@@ -3,6 +3,7 @@ const ASSET_NAMES = [
   'portal.png',
   'player.png',
   'angel.png',
+  'paladin.png',
   'turret-base.png',
   'turret-head.png',
   'exp.png',

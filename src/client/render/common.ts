@@ -17,6 +17,7 @@ export interface RenderObject {
   maxHp?: number;
   remainingRatio?: number;
   aimDirection?: number;
+  mobType?: string;
 }
 
 /** Convert world coords to canvas coords relative to the local player. */

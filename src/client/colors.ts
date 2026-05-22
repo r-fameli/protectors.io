@@ -9,6 +9,8 @@ export const GREEN_HP = '#2ecc71';
 export const BLUE_ACCENT = '#3498db';
 export const MINIMAP_TURRET = '#4488ff';
 
+export const ORANGE = '#e67e22';
+
 // ── Transparency overlays ───────────────────────────────────
 
 export const HUD_BG = 'rgba(0, 0, 0, 0.5)';

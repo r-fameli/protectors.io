@@ -7,13 +7,24 @@ interface ExpOrbState {
   radius: number;
 }
 
+interface MobState {
+  id: string;
+  x: number;
+  y: number;
+  direction: number;
+  hp: number;
+  maxHp: number;
+  radius: number;
+  mobType: string;
+}
+
 interface ServerUpdate {
   t: number;
   me: PlayerState;
   others: PlayerState[];
   bullets: BulletState[];
   portals: PortalState[];
-  angels: AngelState[];
+  mobs: MobState[];
   turrets: TurretState[];
   expOrbs: ExpOrbState[];
 }
@@ -45,16 +56,6 @@ interface PortalState {
   maxHp: number;
 }
 
-interface AngelState {
-  id: string;
-  x: number;
-  y: number;
-  direction: number;
-  hp: number;
-  maxHp: number;
-  radius: number;
-}
-
 interface TurretState {
   id: string;
   x: number;
@@ -70,7 +71,7 @@ interface GameState {
   others?: PlayerState[];
   bullets?: BulletState[];
   portals?: PortalState[];
-  angels?: AngelState[];
+  mobs?: MobState[];
   turrets?: TurretState[];
   expOrbs?: ExpOrbState[];
 }
@@ -126,7 +127,7 @@ export function getCurrentState(): GameState {
       others: latestUpdate.others || [],
       bullets: latestUpdate.bullets || [],
       portals: latestUpdate.portals || [],
-      angels: latestUpdate.angels || [],
+      mobs: latestUpdate.mobs || [],
       turrets: latestUpdate.turrets || [],
       expOrbs: latestUpdate.expOrbs || [],
     };
@@ -139,7 +140,7 @@ export function getCurrentState(): GameState {
       others: interpolateObjectArray(baseUpdate.others || [], next.others || [], ratio),
       bullets: interpolateObjectArray(baseUpdate.bullets || [], next.bullets || [], ratio),
       portals: next.portals || [],
-      angels: interpolateObjectArray(baseUpdate.angels || [], next.angels || [], ratio),
+      mobs: next.mobs || [],
       turrets: next.turrets || [],
       expOrbs: next.expOrbs || [],
     };

@@ -7,14 +7,16 @@ class Mob extends GameObject {
   targetX: number;
   targetY: number;
   radius: number;
+  mobType: string;
 
-  constructor(id: string, x: number, y: number, targetX: number, targetY: number, config: MobConfig) {
+  constructor(id: string, x: number, y: number, targetX: number, targetY: number, config: MobConfig, mobType: string) {
     super(id, x, y, 0, config.BASE_SPEED);
     this.hp = config.BASE_HEALTH;
     this.maxHp = config.BASE_HEALTH;
     this.targetX = targetX;
     this.targetY = targetY;
     this.radius = config.BASE_RADIUS;
+    this.mobType = mobType;
   }
 
   update(dt: number): boolean {
@@ -37,6 +39,7 @@ class Mob extends GameObject {
       hp: this.hp,
       maxHp: this.maxHp,
       radius: this.radius,
+      mobType: this.mobType,
     };
   }
 }

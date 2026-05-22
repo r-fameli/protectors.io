@@ -2,17 +2,23 @@ import { getAsset } from '../assets';
 import { DARK_GRAY, RED_HP, GREEN_HP } from '../colors';
 import { context, worldToScreen, RenderObject } from './common';
 
-export function renderAngel(me: RenderObject, angel: RenderObject) {
-  const { x, y, direction, hp, maxHp, radius } = angel;
+const MOB_SPRITES: Record<string, string> = {
+  angel: 'angel.png',
+  paladin: 'paladin.png',
+};
+
+export function renderMob(me: RenderObject, mob: RenderObject) {
+  const { x, y, direction, hp, maxHp, radius, mobType } = mob;
   const r = radius || 20;
-  const { canvasX, canvasY } = worldToScreen(me, angel);
+  const { canvasX, canvasY } = worldToScreen(me, mob);
+  const sprite = MOB_SPRITES[mobType || ''] || 'angel.png';
 
   // Sprite
   context.save();
   context.translate(canvasX, canvasY);
   context.rotate(direction!);
   context.drawImage(
-    getAsset('angel.png'),
+    getAsset(sprite),
     -r,
     -r,
     r * 2,
