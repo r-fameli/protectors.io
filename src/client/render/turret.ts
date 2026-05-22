@@ -1,11 +1,18 @@
 import { getAsset } from '../assets';
 import { DARK_GRAY, BLUE_ACCENT } from '../colors';
 import { context, worldToScreen, RenderObject } from './common';
+import { BasicTurretConfig } from '../../shared/weapon-configs';
 
 export function renderTurret(me: RenderObject, turret: RenderObject) {
   const { x, y, direction, radius, remainingRatio, aimDirection } = turret;
   const r = radius || 20;
   const { canvasX, canvasY } = worldToScreen(me, turret);
+
+  // Attack radius indicator
+  context.beginPath();
+  context.arc(canvasX, canvasY, BasicTurretConfig.ATTACK_RADIUS, 0, 2 * Math.PI);
+  context.fillStyle = 'rgba(52, 152, 219, 0.06)';
+  context.fill();
 
   // Base
   context.save();
