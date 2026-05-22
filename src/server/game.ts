@@ -231,7 +231,7 @@ class Game {
     // Remove mobs killed by bullets — drop exp orb at death location
     const deadMobs = this.mobs.filter(mob => mob.hp <= 0);
     deadMobs.forEach(mob => {
-      this.expOrbs.push(new ExpOrb(`exp_${mob.id}`, mob.x, mob.y));
+      this.expOrbs.push(new ExpOrb(`exp_${mob.id}`, mob.x, mob.y, mob.xpDrop));
     });
     this.mobs = this.mobs.filter(mob => mob.hp > 0);
     this.bullets = this.bullets.filter(
@@ -262,7 +262,7 @@ class Game {
 
         if (orb.distanceTo(closest) < Constants.PLAYER_RADIUS) {
           consumedOrbs.push(orb);
-          closest.addExp(10);
+          closest.addExp(orb.expValue);
         }
       }
     });

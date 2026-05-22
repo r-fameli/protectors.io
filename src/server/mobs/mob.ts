@@ -8,6 +8,7 @@ class Mob extends GameObject {
   targetY: number;
   radius: number;
   mobType: string;
+  xpDrop: number;
 
   constructor(id: string, x: number, y: number, targetX: number, targetY: number, config: MobConfig, mobType: string) {
     super(id, x, y, 0, config.BASE_SPEED);
@@ -17,6 +18,7 @@ class Mob extends GameObject {
     this.targetY = targetY;
     this.radius = config.BASE_RADIUS;
     this.mobType = mobType;
+    this.xpDrop = config.XP_DROP;
   }
 
   update(dt: number): boolean {
