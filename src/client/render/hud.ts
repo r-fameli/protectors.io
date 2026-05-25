@@ -11,8 +11,8 @@ const EXP_BAR_HEIGHT = 20;
 const EXP_BAR_BOTTOM = 10;
 
 const WEAPON_SPRITES: Record<WeaponType, string> = {
-  turret: 'turret-base.png',
-  springer: 'springer.png',
+  turret: 'weapons/turret-base.png',
+  springer: 'weapons/springer.png',
 };
 
 function renderCooldownBox(x: number, weapon: WeaponState) {

@@ -15,7 +15,7 @@ export function renderTree(me: RenderObject, tree: RenderObject) {
   context.fill();
 
   context.drawImage(
-    getAsset('tree.png'),
+    getAsset('objects/tree.png'),
     canvasX - treeR,
     canvasY - treeR,
     treeR * 2,

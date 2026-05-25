@@ -27,7 +27,7 @@ export function renderDeployable(me: RenderObject, obj: RenderObject) {
     context.translate(canvasX, canvasY);
     context.rotate(direction!);
     context.drawImage(
-      getAsset('turret-base.png'),
+      getAsset('weapons/turret-base.png'),
       -r, -r,
       r * 2, r * 2,
     );
@@ -38,7 +38,7 @@ export function renderDeployable(me: RenderObject, obj: RenderObject) {
     context.translate(canvasX, canvasY);
     context.rotate(aimDirection || 0);
     context.drawImage(
-      getAsset('turret-head.png'),
+      getAsset('weapons/turret-head.png'),
       -r, -r,
       r * 2, r * 2,
     );
@@ -47,7 +47,7 @@ export function renderDeployable(me: RenderObject, obj: RenderObject) {
     context.save();
     context.translate(canvasX, canvasY);
     context.drawImage(
-      getAsset('springer.png'),
+      getAsset('weapons/springer.png'),
       -r, -r,
       r * 2, r * 2,
     );

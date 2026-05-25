@@ -7,7 +7,7 @@ export function renderExpOrb(me: RenderObject, orb: RenderObject) {
   const { canvasX, canvasY } = worldToScreen(me, orb);
 
   context.drawImage(
-    getAsset('exp.png'),
+    getAsset('objects/exp.png'),
     canvasX - r,
     canvasY - r,
     r * 2,

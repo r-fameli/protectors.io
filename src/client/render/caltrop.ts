@@ -7,7 +7,7 @@ export function renderCaltrop(me: RenderObject, caltrop: RenderObject) {
   const { canvasX, canvasY } = worldToScreen(me, caltrop);
 
   context.drawImage(
-    getAsset('caltrop.png'),
+    getAsset('projectiles/caltrop.png'),
     canvasX - r,
     canvasY - r,
     r * 2,

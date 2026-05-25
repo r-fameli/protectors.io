@@ -5,7 +5,7 @@ export function renderBullet(me: RenderObject, bullet: RenderObject) {
   const { canvasX, canvasY } = worldToScreen(me, bullet);
 
   context.drawImage(
-    getAsset('bullet.svg'),
+    getAsset('projectiles/bullet.svg'),
     canvasX - BULLET_RADIUS,
     canvasY - BULLET_RADIUS,
     BULLET_RADIUS * 2,

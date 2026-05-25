@@ -3,8 +3,8 @@ import { DARK_GRAY, RED_HP, GREEN_HP } from '../colors';
 import { context, worldToScreen, RenderObject } from './common';
 
 const MOB_SPRITES: Record<string, string> = {
-  angel: 'angel.png',
-  paladin: 'paladin.png',
+  angel: 'mobs/angel.png',
+  paladin: 'mobs/paladin.png',
 };
 
 export function renderMob(me: RenderObject, mob: RenderObject) {
