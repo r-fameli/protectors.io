@@ -27,7 +27,7 @@ export const CANVAS_BLUE = 'blue';
 export const CANVAS_GREEN = 'green';
 export const CANVAS_YELLOW = 'yellow';
 
-export const SHADE_COLOR = 'rgba(0, 0, 0, 0.35)';
+export const SHADE_COLOR = 'rgba(0, 0, 0, 0.20)';
 
 // ── Background ──────────────────────────────────────────────
 
