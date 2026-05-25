@@ -1,7 +1,6 @@
 import { getAsset } from '../assets';
 import { canvas, context } from './common';
-import { BasicTurretConfig } from '../../shared/weapon-configs';
-import { PlayerState } from '../state';
+import { PlayerState, WeaponState, WeaponType } from '../state';
 import { HUD_BG, COOLDOWN_TINT, BLUE_ACCENT, WHITE } from '../colors';
 
 const BOX_SIZE = 64;
@@ -11,28 +10,34 @@ const IMAGE_SIZE = 40;
 const EXP_BAR_HEIGHT = 20;
 const EXP_BAR_BOTTOM = 10;
 
-export function renderTurretCooldown(me: PlayerState) {
-  const x = PADDING;
-  const y = PADDING;
+const WEAPON_SPRITES: Record<WeaponType, string> = {
+  turret: 'turret-base.png',
+  springer: 'springer.png',
+};
 
-  // Box background
+function renderCooldownBox(x: number, weapon: WeaponState) {
   context.fillStyle = HUD_BG;
-  context.fillRect(x, y, BOX_SIZE, BOX_SIZE);
+  context.fillRect(x, PADDING, BOX_SIZE, BOX_SIZE);
 
-  // Cooldown progress (0 = just placed, 1 = ready)
-  const progress = Math.max(0, Math.min(1, 1 - me.turretCooldown / BasicTurretConfig.COOLDOWN));
-
-  // Tint overlay — grows from bottom
+  const progress = Math.max(0, Math.min(1, 1 - weapon.cooldown / weapon.maxCooldown));
   if (progress > 0) {
     const tintHeight = BOX_SIZE * progress;
     context.fillStyle = COOLDOWN_TINT;
-    context.fillRect(x, y + BOX_SIZE - tintHeight, BOX_SIZE, tintHeight);
+    context.fillRect(x, PADDING + BOX_SIZE - tintHeight, BOX_SIZE, tintHeight);
   }
 
-  // Turret icon centered
-  const img = getAsset('turret-base.png');
-  const imgOffset = (BOX_SIZE - IMAGE_SIZE) / 2;
-  context.drawImage(img, x + imgOffset, y + imgOffset, IMAGE_SIZE, IMAGE_SIZE);
+  const sprite = WEAPON_SPRITES[weapon.type];
+  if (sprite) {
+    const img = getAsset(sprite);
+    const imgOffset = (BOX_SIZE - IMAGE_SIZE) / 2;
+    context.drawImage(img, x + imgOffset, PADDING + imgOffset, IMAGE_SIZE, IMAGE_SIZE);
+  }
+}
+
+export function renderWeaponCooldowns(me: PlayerState) {
+  (me.weapons || []).forEach((weapon, i) => {
+    renderCooldownBox(PADDING + i * (BOX_SIZE + 8), weapon);
+  });
 }
 
 export function renderExpBar(me: PlayerState) {

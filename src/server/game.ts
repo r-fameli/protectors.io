@@ -6,8 +6,10 @@ import Mob from "./mobs/mob";
 import Angel from "./mobs/angel";
 import Paladin from "./mobs/paladin";
 import Turret from "./weapons/turret";
+import Springer from "./weapons/springer";
+import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
-import { BasicTurretConfig } from "../shared/weapon-configs";
+import { BasicTurretConfig, SpringerConfig } from "../shared/weapon-configs";
 import { ANGEL as ANGEL_CONFIG, PALADIN as PALADIN_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 
@@ -28,7 +30,8 @@ class Game {
   portals: Portal[];
   bullets: Bullet[];
   mobs: Mob[];
-  turrets: Turret[];
+  deployables: (Turret | Springer)[];
+  caltrops: Caltrop[];
   expOrbs: ExpOrb[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
@@ -43,7 +46,8 @@ class Game {
     this.portals = [];
     this.bullets = [];
     this.mobs = [];
-    this.turrets = [];
+    this.deployables = [];
+    this.caltrops = [];
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
@@ -112,6 +116,39 @@ class Game {
     this.mobs.push(paladin);
   }
 
+  private tryPlaceDeployable(
+    dt: number,
+    player: Player,
+    cd: () => number,
+    setCd: (v: number) => void,
+    incCounter: () => number,
+    config: { RADIUS: number; COOLDOWN: number; ID_PREFIX: string },
+    create: (id: string, x: number, y: number) => Turret | Springer,
+  ) {
+    let cooldown = cd();
+    cooldown -= dt * 1000;
+    if (cooldown <= 0) {
+      const offset = Constants.PLAYER_RADIUS + config.RADIUS + 10;
+      const px = player.x + Math.cos(player.direction) * offset;
+      const py = player.y + Math.sin(player.direction) * offset;
+
+      const blocked = this.deployables.some(d => {
+        const dx = d.x - px;
+        const dy = d.y - py;
+        return (dx * dx + dy * dy) < (config.RADIUS * 2) ** 2;
+      });
+
+      if (!blocked) {
+        cooldown += config.COOLDOWN;
+        const id = incCounter();
+        this.deployables.push(create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py));
+      } else {
+        cooldown = 0;
+      }
+    }
+    setCd(cooldown);
+  }
+
   update() {
     const now = Date.now();
     const dt = (now - this.lastUpdateTime) / 1000;
@@ -145,38 +182,26 @@ class Game {
       (bullet) => !bulletsToRemove.includes(bullet),
     );
 
-    // Update players — place turrets on cooldown
+    // Update players — place deployables on cooldown
     Object.keys(this.sockets).forEach((playerID) => {
       const player = this.players[playerID];
       player.update(dt);
 
-      player.turretCooldown -= dt * 1000;
-      if (player.turretCooldown <= 0) {
-        const offset = Constants.PLAYER_RADIUS + BasicTurretConfig.RADIUS + 10;
-        const tx = player.x + Math.cos(player.direction) * offset;
-        const ty = player.y + Math.sin(player.direction) * offset;
+      this.tryPlaceDeployable(dt, player,
+        () => player.turretCooldown,
+        v => { player.turretCooldown = v; },
+        () => ++player.turretIdCounter,
+        BasicTurretConfig,
+        (id, x, y) => new Turret(id, x, y, player.direction, BasicTurretConfig),
+      );
 
-        const blocked = this.turrets.some(t => {
-          const dx = t.x - tx;
-          const dy = t.y - ty;
-          return (dx * dx + dy * dy) < (BasicTurretConfig.RADIUS * 2) ** 2;
-        });
-
-        if (!blocked) {
-          player.turretCooldown += BasicTurretConfig.COOLDOWN;
-          player.turretIdCounter++;
-          this.turrets.push(new Turret(
-            `${player.id}_turret_${player.turretIdCounter}`,
-            tx, ty,
-            player.direction,
-            BasicTurretConfig,
-          ));
-        } else {
-          // Blocked — reset cooldown to 0 so it pauses instead of
-          // accumulating negative time that triggers a burst when space clears.
-          player.turretCooldown = 0;
-        }
-      }
+      this.tryPlaceDeployable(dt, player,
+        () => player.springerCooldown,
+        v => { player.springerCooldown = v; },
+        () => ++player.springerIdCounter,
+        SpringerConfig,
+        (id, x, y) => new Springer(id, x, y),
+      );
     });
 
     // Update mobs — damage portal when one reaches it
@@ -190,11 +215,11 @@ class Game {
       this.portals.forEach(p => p.takeDamage(mob.maxHp));
     });
 
-    // Remove expired turrets
-    this.turrets = this.turrets.filter(t => !t.update(dt));
+    // Remove expired deployables
+    this.deployables = this.deployables.filter(d => !d.update(dt));
 
     // Turrets aim at closest mob + fire
-    this.turrets.forEach(turret => {
+    this.deployables.filter((d): d is Turret => d.type === 'turret').forEach(turret => {
       interface Target { x: number; y: number; hp: number; }
       let closest: Target | null = null;
       let closestDist = turret.attackRadius;
@@ -215,17 +240,36 @@ class Game {
         turret.fireCooldown = turret.fireCdInterval;
         this.bullets.push(new Bullet(turret.id, turret.x, turret.y, turret.aimDirection, BasicTurretConfig.DAMAGE));
       } else if (!closest) {
-        // Idle — prevent negative accumulation that causes burst when target appears
         turret.fireCooldown = 0;
       }
     });
 
+    // Springers deploy caltrops on cooldown
+    this.deployables.filter((d): d is Springer => d.type === 'springer').forEach(springer => {
+      springer.caltropCooldown -= dt * 1000;
+      if (springer.caltropCooldown <= 0) {
+        springer.caltropCooldown += 3000;
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = Math.random() * springer.caltropRadius;
+        const cx = springer.x + Math.cos(angle) * dist;
+        const cy = springer.y + Math.sin(angle) * dist;
+        this.caltrops.push(new Caltrop(
+          `${springer.id}_caltrop_${Date.now()}`,
+          cx, cy,
+        ));
+      }
+    });
+
+    // Remove expired caltrops
+    this.caltrops = this.caltrops.filter(c => !c.update(dt));
+
     // Apply collisions
-    const destroyedBullets = applyCollisions(
+    const { destroyedBullets, destroyedCaltrops } = applyCollisions(
       Object.values(this.players),
       this.bullets,
       this.portals,
       this.mobs,
+      this.caltrops,
     );
 
     // Remove mobs killed by bullets — drop exp orb at death location
@@ -236,6 +280,9 @@ class Game {
     this.mobs = this.mobs.filter(mob => mob.hp > 0);
     this.bullets = this.bullets.filter(
       (bullet) => !destroyedBullets.includes(bullet),
+    );
+    this.caltrops = this.caltrops.filter(
+      (caltrop) => !destroyedCaltrops.includes(caltrop),
     );
 
     // Exp orbs — attract toward nearest player and consume on contact
@@ -293,7 +340,8 @@ class Game {
   resetGameState() {
     this.mobs = [];
     this.bullets = [];
-    this.turrets = [];
+    this.deployables = [];
+    this.caltrops = [];
     this.expOrbs = [];
     this.angelSpawnTimer = 0;
     this.angelIdCounter = 0;
@@ -321,7 +369,8 @@ class Game {
       (b) => b.distanceTo(player) <= Constants.MAP_SIZE / 2,
     );
     const nearbyMobs = this.mobs;
-    const nearbyTurrets = this.turrets;
+    const nearbyDeployables = this.deployables;
+    const nearbyCaltrops = this.caltrops;
     const nearbyExpOrbs = this.expOrbs.filter(
       (e) => e.distanceTo(player) <= Constants.MAP_SIZE / 2,
     );
@@ -332,7 +381,8 @@ class Game {
       bullets: nearbyBullets.map((b) => b.serializeForUpdate()),
       portals: this.portals.map((p) => p.serializeForUpdate()),
       mobs: nearbyMobs.map((m) => m.serializeForUpdate()),
-      turrets: nearbyTurrets.map((t) => t.serializeForUpdate()),
+      deployables: nearbyDeployables.map((d) => d.serializeForUpdate()),
+      caltrops: nearbyCaltrops.map((c) => c.serializeForUpdate()),
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
     };
   }

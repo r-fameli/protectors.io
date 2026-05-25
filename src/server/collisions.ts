@@ -11,13 +11,20 @@ interface Collidable {
   takeDamage?: (amount: number) => void;
 }
 
+interface CollisionResult {
+  destroyedBullets: Collidable[];
+  destroyedCaltrops: Collidable[];
+}
+
 function applyCollisions(
   players: Collidable[],
   bullets: Collidable[],
   portals: Collidable[],
   mobs: Collidable[],
-): Collidable[] {
+  caltrops: Collidable[],
+): CollisionResult {
   const destroyedBullets: Collidable[] = [];
+  const destroyedCaltrops: Collidable[] = [];
 
   // Bullet vs mobs
   for (let i = 0; i < bullets.length; i++) {
@@ -31,6 +38,22 @@ function applyCollisions(
       ) {
         destroyedBullets.push(bullet);
         mob.takeDamage!(bullet.damage || Constants.BULLET_DAMAGE);
+        break;
+      }
+    }
+  }
+
+  // Caltrop vs mobs
+  for (let i = 0; i < caltrops.length; i++) {
+    if (destroyedCaltrops.includes(caltrops[i])) continue;
+    for (let j = 0; j < mobs.length; j++) {
+      const caltrop = caltrops[i];
+      const mob = mobs[j];
+      if (
+        mob.distanceTo(caltrop) <= (mob.radius || 20) + (caltrop.radius || 8)
+      ) {
+        destroyedCaltrops.push(caltrop);
+        mob.takeDamage!(caltrop.damage || 70);
         break;
       }
     }
@@ -52,7 +75,7 @@ function applyCollisions(
     }
   }
 
-  return destroyedBullets;
+  return { destroyedBullets, destroyedCaltrops };
 }
 
 export default applyCollisions;

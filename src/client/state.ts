@@ -18,6 +18,17 @@ interface MobState {
   mobType: string;
 }
 
+interface DeployableState {
+  type: string;
+  id: string;
+  x: number;
+  y: number;
+  direction?: number;
+  radius: number;
+  remainingRatio: number;
+  aimDirection?: number;
+}
+
 interface ServerUpdate {
   t: number;
   me: PlayerState;
@@ -25,8 +36,17 @@ interface ServerUpdate {
   bullets: BulletState[];
   portals: PortalState[];
   mobs: MobState[];
-  turrets: TurretState[];
+  deployables: DeployableState[];
+  caltrops: CaltropState[];
   expOrbs: ExpOrbState[];
+}
+
+export type WeaponType = 'turret' | 'springer';
+
+export interface WeaponState {
+  type: WeaponType;
+  cooldown: number;
+  maxCooldown: number;
 }
 
 export interface PlayerState {
@@ -35,7 +55,7 @@ export interface PlayerState {
   y: number;
   direction: number;
   hp: number;
-  turretCooldown: number;
+  weapons: WeaponState[];
   exp: number;
   level: number;
   nextLevelExp: number;
@@ -56,14 +76,11 @@ interface PortalState {
   maxHp: number;
 }
 
-interface TurretState {
+interface CaltropState {
   id: string;
   x: number;
   y: number;
-  direction: number;
   radius: number;
-  remainingRatio: number;
-  aimDirection: number;
 }
 
 interface GameState {
@@ -72,7 +89,8 @@ interface GameState {
   bullets?: BulletState[];
   portals?: PortalState[];
   mobs?: MobState[];
-  turrets?: TurretState[];
+  deployables?: DeployableState[];
+  caltrops?: CaltropState[];
   expOrbs?: ExpOrbState[];
 }
 
@@ -128,7 +146,8 @@ export function getCurrentState(): GameState {
       bullets: latestUpdate.bullets || [],
       portals: latestUpdate.portals || [],
       mobs: latestUpdate.mobs || [],
-      turrets: latestUpdate.turrets || [],
+      deployables: latestUpdate.deployables || [],
+      caltrops: latestUpdate.caltrops || [],
       expOrbs: latestUpdate.expOrbs || [],
     };
   } else {
@@ -141,7 +160,8 @@ export function getCurrentState(): GameState {
       bullets: interpolateObjectArray(baseUpdate.bullets || [], next.bullets || [], ratio),
       portals: next.portals || [],
       mobs: next.mobs || [],
-      turrets: next.turrets || [],
+      deployables: next.deployables || [],
+      caltrops: next.caltrops || [],
       expOrbs: next.expOrbs || [],
     };
   }
@@ -156,6 +176,10 @@ function interpolateObject<T>(object1: T, object2: T | undefined, ratio: number)
   (Object.keys(object1 as Record<string, unknown>)).forEach(key => {
     if (key === 'direction') {
       interpolated[key] = interpolateDirection((object1 as Record<string, number>)[key], (object2 as Record<string, number>)[key], ratio);
+    }
+    // FIXME: Is this case needed?
+    else if (key === 'weapons') {
+      interpolated[key] = (object2 as Record<string, unknown>)[key] || (object1 as Record<string, unknown>)[key];
     } else {
       interpolated[key] = (object1 as Record<string, number>)[key] + ((object2 as Record<string, number>)[key] - (object1 as Record<string, number>)[key]) * ratio;
     }

@@ -6,6 +6,8 @@ const ASSET_NAMES = [
   'paladin.png',
   'turret-base.png',
   'turret-head.png',
+  'springer.png',
+  'caltrop.png',
   'exp.png',
 ];
 

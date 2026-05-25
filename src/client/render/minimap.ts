@@ -1,18 +1,13 @@
 import { context } from './common';
 import { MAP_SIZE, RenderObject } from './common';
-import { CANVAS_BLACK, CANVAS_WHITE, CANVAS_BLUE, CANVAS_GREEN, CANVAS_YELLOW, MINIMAP_TURRET, RED_HP } from '../colors';
-
-const MOB_MINIMAP_COLORS: Record<string, string> = {
-  angel: CANVAS_YELLOW,
-  paladin: RED_HP,
-};
+import { CANVAS_BLACK, CANVAS_WHITE, CANVAS_BLUE, CANVAS_GREEN, CANVAS_YELLOW, MINIMAP_TURRET } from '../colors';
 
 export function renderMinimap(
   me: RenderObject,
   others: RenderObject[],
   portals: RenderObject[],
   mobs: RenderObject[],
-  turrets?: RenderObject[],
+  deployables?: RenderObject[],
 ) {
   const minimapSize = 150;
   const minimapX = context.canvas.width - minimapSize - 10;
@@ -54,7 +49,7 @@ export function renderMinimap(
   // Mobs
   if (mobs) {
     mobs.forEach(mob => {
-      context.fillStyle = MOB_MINIMAP_COLORS[mob.mobType || ''] || CANVAS_YELLOW;
+      context.fillStyle = CANVAS_YELLOW;
       context.beginPath();
       context.arc(
         minimapX + mob.x * scale,
@@ -65,14 +60,14 @@ export function renderMinimap(
     });
   }
 
-  // Turrets
-  if (turrets) {
-    turrets.forEach(turret => {
+  // Deployables
+  if (deployables) {
+    deployables.forEach(d => {
       context.fillStyle = MINIMAP_TURRET;
       context.beginPath();
       context.arc(
-        minimapX + turret.x * scale,
-        minimapY + turret.y * scale,
+        minimapX + d.x * scale,
+        minimapY + d.y * scale,
         2, 0, 2 * Math.PI,
       );
       context.fill();

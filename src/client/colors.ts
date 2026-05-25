@@ -17,6 +17,7 @@ export const HUD_BG = 'rgba(0, 0, 0, 0.5)';
 export const PORTAL_BG = 'rgba(0, 0, 0, 0.6)';
 export const COOLDOWN_TINT = 'rgba(52, 152, 219, 0.35)';
 export const HITBOX_STROKE = 'rgba(255, 0, 0, 0.5)';
+export const WEAPON_RING = 'rgba(52, 152, 219, 0.06)';
 
 // ── Named colors for canvas API ─────────────────────────────
 

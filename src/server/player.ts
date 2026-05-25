@@ -1,7 +1,16 @@
 import GameObject from './object';
 import Constants from '../shared/constants';
+import { BasicTurretConfig, SpringerConfig } from '../shared/weapon-configs';
 
 const EXP_BASE_THRESHOLD = 100;
+
+type WeaponType = 'turret' | 'springer';
+
+interface WeaponState {
+  type: WeaponType;
+  cooldown: number;
+  maxCooldown: number;
+}
 
 class Player extends GameObject {
   username: string;
@@ -9,6 +18,8 @@ class Player extends GameObject {
   score: number;
   turretCooldown: number;
   turretIdCounter: number;
+  springerCooldown: number;
+  springerIdCounter: number;
   exp: number;
   level: number;
   nextLevelExp: number;
@@ -20,6 +31,8 @@ class Player extends GameObject {
     this.score = 0;
     this.turretCooldown = 0;
     this.turretIdCounter = 0;
+    this.springerCooldown = 0;
+    this.springerIdCounter = 0;
     this.exp = 0;
     this.level = 1;
     this.nextLevelExp = EXP_BASE_THRESHOLD;
@@ -41,12 +54,20 @@ class Player extends GameObject {
     this.y = Math.max(0, Math.min(Constants.MAP_SIZE, this.y));
   }
 
+  getWeapons(): WeaponState[] {
+    // Hardcoding these weapons for now
+    return [
+      { type: 'turret', cooldown: this.turretCooldown, maxCooldown: BasicTurretConfig.COOLDOWN },
+      { type: 'springer', cooldown: this.springerCooldown, maxCooldown: SpringerConfig.COOLDOWN },
+    ];
+  }
+
   serializeForUpdate() {
     return {
       ...super.serializeForUpdate(),
       direction: this.direction,
       hp: this.hp,
-      turretCooldown: this.turretCooldown,
+      weapons: this.getWeapons(),
       exp: this.exp,
       level: this.level,
       nextLevelExp: this.nextLevelExp,

@@ -2,6 +2,7 @@ import GameObject from "../object";
 import { TurretConfig } from "../../shared/weapon-configs";
 
 class Turret extends GameObject {
+  type: string;
   spawnTime: number;
   duration: number;
   radius: number;
@@ -12,6 +13,7 @@ class Turret extends GameObject {
 
   constructor(id: string, x: number, y: number, dir: number, config: TurretConfig) {
     super(id, x, y, dir, 0);
+    this.type = 'turret';
     this.isMoving = false;
     this.spawnTime = Date.now();
     this.duration = config.DURATION;
@@ -29,6 +31,7 @@ class Turret extends GameObject {
   serializeForUpdate() {
     return {
       ...super.serializeForUpdate(),
+      type: this.type,
       direction: this.direction,
       radius: this.radius,
       remainingRatio: Math.max(0, 1 - (Date.now() - this.spawnTime) / this.duration),

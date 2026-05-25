@@ -6,12 +6,13 @@ import { canvas, context, MAP_SIZE, RenderObject, isNear, forEachNearby } from '
 import { HITBOX_STROKE, CANVAS_BLACK, GRADIENT_CENTER, GRADIENT_EDGE } from '../colors';
 import { renderPlayer } from './player';
 import { renderMob } from './mob';
-import { renderTurret } from './turret';
+import { renderDeployable } from './deployable';
+import { renderCaltrop } from './caltrop';
 import { renderPortal, renderPortalHP } from './portal';
 import { renderBullet } from './bullet';
 import { renderExpOrb } from './exp-orb';
 import { renderMinimap } from './minimap';
-import { renderTurretCooldown, renderExpBar } from './hud';
+import { renderWeaponCooldowns, renderExpBar } from './hud';
 
 // ── Canvas setup ──────────────────────────────────────────
 
@@ -65,7 +66,7 @@ function renderHitbox(me: RenderObject, object: RenderObject) {
 function render() {
   input.update();
 
-  const { me, others, bullets, portals, mobs, turrets, expOrbs } = getCurrentState();
+  const { me, others, bullets, portals, mobs, deployables, caltrops, expOrbs } = getCurrentState();
   if (me) {
     renderBackground(me.x, me.y);
 
@@ -82,7 +83,8 @@ function render() {
       portals.forEach(renderPortal.bind(null, me));
     }
 
-    forEachNearby(me, turrets, renderTurret);
+    forEachNearby(me, deployables, renderDeployable);
+    forEachNearby(me, caltrops, renderCaltrop);
     forEachNearby(me, bullets, renderBullet);
 
     renderPlayer(me, me);
@@ -97,8 +99,8 @@ function render() {
       if (isNear(me, me)) renderHitbox(me, me);
     }
 
-    renderMinimap(me, others!, portals!, mobs || [], turrets);
-    renderTurretCooldown(me);
+    renderMinimap(me, others!, portals!, mobs || [], deployables || []);
+    renderWeaponCooldowns(me);
     renderExpBar(me);
     if (portals && portals.length > 0) {
       renderPortalHP(me, portals[0]);
