@@ -8,7 +8,7 @@ import { renderPlayer } from './player';
 import { renderMob } from './mob';
 import { renderDeployable } from './deployable';
 import { renderCaltrop } from './caltrop';
-import { renderPortal, renderPortalHP } from './portal';
+import { renderTree, renderTreeHP } from './tree';
 import { renderBullet } from './bullet';
 import { renderExpOrb } from './exp-orb';
 import { renderMinimap } from './minimap';
@@ -66,7 +66,7 @@ function renderHitbox(me: RenderObject, object: RenderObject) {
 function render() {
   input.update();
 
-  const { me, others, bullets, portals, mobs, deployables, caltrops, expOrbs } = getCurrentState();
+  const { me, others, bullets, trees, mobs, deployables, caltrops, expOrbs } = getCurrentState();
   if (me) {
     renderBackground(me.x, me.y);
 
@@ -79,8 +79,8 @@ function render() {
       MAP_SIZE, MAP_SIZE,
     );
 
-    if (portals) {
-      portals.forEach(renderPortal.bind(null, me));
+    if (trees) {
+      trees.forEach(renderTree.bind(null, me));
     }
 
     forEachNearby(me, deployables, renderDeployable);
@@ -94,16 +94,16 @@ function render() {
     forEachNearby(me, expOrbs, renderExpOrb);
 
     if (showHitboxes) {
-      forEachNearby(me, portals, renderHitbox);
+      forEachNearby(me, trees, renderHitbox);
       forEachNearby(me, others, renderHitbox);
       if (isNear(me, me)) renderHitbox(me, me);
     }
 
-    renderMinimap(me, others!, portals!, mobs || [], deployables || []);
+    renderMinimap(me, others!, trees!, mobs || [], deployables || []);
     renderWeaponCooldowns(me);
     renderExpBar(me);
-    if (portals && portals.length > 0) {
-      renderPortalHP(me, portals[0]);
+    if (trees && trees.length > 0) {
+      renderTreeHP(me, trees[0]);
     }
   }
 

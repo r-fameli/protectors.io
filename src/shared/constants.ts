@@ -8,7 +8,7 @@ interface ConstantsType {
   BULLET_DAMAGE: number;
   SCORE_PER_SECOND: number;
   MAP_SIZE: number;
-  PORTAL_MAX_HP: number;
+  TREE_MAX_HP: number;
   MSG_TYPES: {
     JOIN_GAME: string;
     GAME_UPDATE: string;
@@ -27,7 +27,7 @@ const Constants: ConstantsType = Object.freeze({
   BULLET_DAMAGE: 10,
   SCORE_PER_SECOND: 1,
   MAP_SIZE: 4000,
-  PORTAL_MAX_HP: 1000,
+  TREE_MAX_HP: 1000,
   MSG_TYPES: {
     JOIN_GAME: 'join_game',
     GAME_UPDATE: 'update',

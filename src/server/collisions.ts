@@ -19,7 +19,7 @@ interface CollisionResult {
 function applyCollisions(
   players: Collidable[],
   bullets: Collidable[],
-  portals: Collidable[],
+  trees: Collidable[],
   mobs: Collidable[],
   caltrops: Collidable[],
 ): CollisionResult {
@@ -59,18 +59,18 @@ function applyCollisions(
     }
   }
 
-  // Player vs portal push
+  // Player vs tree push
   for (let i = 0; i < players.length; i++) {
-    for (let j = 0; j < portals.length; j++) {
+    for (let j = 0; j < trees.length; j++) {
       const player = players[i];
-      const portal = portals[j];
-      const distance = player.distanceTo(portal);
+      const tree = trees[j];
+      const distance = player.distanceTo(tree);
 
-      if (distance < Constants.PLAYER_RADIUS + portal.radius!) {
-        const angle = Math.atan2(player.y - portal.y, player.x - portal.x);
-        const targetDistance = Constants.PLAYER_RADIUS + portal.radius!;
-        player.x = portal.x + Math.cos(angle) * targetDistance;
-        player.y = portal.y + Math.sin(angle) * targetDistance;
+      if (distance < Constants.PLAYER_RADIUS + tree.radius!) {
+        const angle = Math.atan2(player.y - tree.y, player.x - tree.x);
+        const targetDistance = Constants.PLAYER_RADIUS + tree.radius!;
+        player.x = tree.x + Math.cos(angle) * targetDistance;
+        player.y = tree.y + Math.sin(angle) * targetDistance;
       }
     }
   }

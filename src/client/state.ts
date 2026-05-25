@@ -34,7 +34,7 @@ interface ServerUpdate {
   me: PlayerState;
   others: PlayerState[];
   bullets: BulletState[];
-  portals: PortalState[];
+  trees: TreeState[];
   mobs: MobState[];
   deployables: DeployableState[];
   caltrops: CaltropState[];
@@ -67,7 +67,7 @@ interface BulletState {
   y: number;
 }
 
-interface PortalState {
+interface TreeState {
   id: string;
   x: number;
   y: number;
@@ -87,7 +87,7 @@ interface GameState {
   me?: PlayerState;
   others?: PlayerState[];
   bullets?: BulletState[];
-  portals?: PortalState[];
+  trees?: TreeState[];
   mobs?: MobState[];
   deployables?: DeployableState[];
   caltrops?: CaltropState[];
@@ -144,7 +144,7 @@ export function getCurrentState(): GameState {
       me: latestUpdate.me,
       others: latestUpdate.others || [],
       bullets: latestUpdate.bullets || [],
-      portals: latestUpdate.portals || [],
+      trees: latestUpdate.trees || [],
       mobs: latestUpdate.mobs || [],
       deployables: latestUpdate.deployables || [],
       caltrops: latestUpdate.caltrops || [],
@@ -158,7 +158,7 @@ export function getCurrentState(): GameState {
       me: interpolateObject(baseUpdate.me, next.me, ratio),
       others: interpolateObjectArray(baseUpdate.others || [], next.others || [], ratio),
       bullets: interpolateObjectArray(baseUpdate.bullets || [], next.bullets || [], ratio),
-      portals: next.portals || [],
+      trees: next.trees || [],
       mobs: next.mobs || [],
       deployables: next.deployables || [],
       caltrops: next.caltrops || [],

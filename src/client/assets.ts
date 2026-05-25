@@ -1,6 +1,6 @@
 const ASSET_NAMES = [
   'bullet.svg',
-  'portal.png',
+  'tree.png',
   'player.png',
   'angel.png',
   'paladin.png',

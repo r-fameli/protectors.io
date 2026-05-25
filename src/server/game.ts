@@ -1,6 +1,6 @@
 import Constants from "../shared/constants";
 import Player from "./player";
-import Portal from "./portal";
+import Tree from "./tree";
 import Bullet from "./bullet";
 import Mob from "./mobs/mob";
 import Angel from "./mobs/angel";
@@ -27,7 +27,7 @@ function randomBoundaryPosition(): { x: number; y: number } {
 class Game {
   sockets: Record<string, import("socket.io").Socket>;
   players: Record<string, Player>;
-  portals: Portal[];
+  trees: Tree[];
   bullets: Bullet[];
   mobs: Mob[];
   deployables: (Turret | Springer)[];
@@ -43,7 +43,7 @@ class Game {
   constructor() {
     this.sockets = {};
     this.players = {};
-    this.portals = [];
+    this.trees = [];
     this.bullets = [];
     this.mobs = [];
     this.deployables = [];
@@ -57,7 +57,7 @@ class Game {
     this.paladinIdCounter = 0;
     setInterval(this.update.bind(this), 1000 / 60);
 
-    this.portals.push(new Portal('portal', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
+    this.trees.push(new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
   }
 
   addPlayer(socket: import("socket.io").Socket, username: string) {
@@ -204,7 +204,7 @@ class Game {
       );
     });
 
-    // Update mobs — damage portal when one reaches it
+    // Update mobs — damage tree when one reaches it
     const reachedMobs: Mob[] = [];
     this.mobs = this.mobs.filter(mob => {
       const reached = mob.update(dt);
@@ -212,7 +212,7 @@ class Game {
       return !reached;
     });
     reachedMobs.forEach(mob => {
-      this.portals.forEach(p => p.takeDamage(mob.maxHp));
+      this.trees.forEach(p => p.takeDamage(mob.maxHp));
     });
 
     // Remove expired deployables
@@ -267,7 +267,7 @@ class Game {
     const { destroyedBullets, destroyedCaltrops } = applyCollisions(
       Object.values(this.players),
       this.bullets,
-      this.portals,
+      this.trees,
       this.mobs,
       this.caltrops,
     );
@@ -315,8 +315,8 @@ class Game {
     });
     this.expOrbs = this.expOrbs.filter(o => !consumedOrbs.includes(o));
 
-    // Check game over — portal destroyed
-    if (this.portals.some(p => p.hp <= 0)) {
+    // Check game over — tree destroyed
+    if (this.trees.some(p => p.hp <= 0)) {
       this.endGame();
       return;
     }
@@ -347,7 +347,7 @@ class Game {
     this.angelIdCounter = 0;
     this.paladinSpawnTimer = 0;
     this.paladinIdCounter = 0;
-    this.portals = [new Portal('portal', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
+    this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
   }
 
@@ -379,7 +379,7 @@ class Game {
       me: player.serializeForUpdate(),
       others: nearbyPlayers.map((p) => p.serializeForUpdate()),
       bullets: nearbyBullets.map((b) => b.serializeForUpdate()),
-      portals: this.portals.map((p) => p.serializeForUpdate()),
+      trees: this.trees.map((p) => p.serializeForUpdate()),
       mobs: nearbyMobs.map((m) => m.serializeForUpdate()),
       deployables: nearbyDeployables.map((d) => d.serializeForUpdate()),
       caltrops: nearbyCaltrops.map((c) => c.serializeForUpdate()),

@@ -5,7 +5,7 @@ import { CANVAS_BLACK, CANVAS_WHITE, CANVAS_BLUE, CANVAS_GREEN, CANVAS_YELLOW, M
 export function renderMinimap(
   me: RenderObject,
   others: RenderObject[],
-  portals: RenderObject[],
+  trees: RenderObject[],
   mobs: RenderObject[],
   deployables?: RenderObject[],
 ) {
@@ -23,7 +23,7 @@ export function renderMinimap(
   context.strokeRect(minimapX, minimapY, minimapSize, minimapSize);
 
   // Portal
-  if (portals && portals.length > 0) {
+  if (trees && trees.length > 0) {
     context.fillStyle = CANVAS_BLUE;
     context.beginPath();
     context.arc(

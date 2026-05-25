@@ -1,12 +1,12 @@
 import { getAsset } from '../assets';
 import { canvas, context, worldToScreen, RenderObject } from './common';
-import { PORTAL_BG, RED_HP, GREEN_HP, WHITE } from '../colors';
+import { TREE_BG, RED_HP, GREEN_HP, WHITE } from '../colors';
 
-export function renderPortal(me: RenderObject, portal: RenderObject) {
-  const { canvasX, canvasY } = worldToScreen(me, portal);
+export function renderTree(me: RenderObject, tree: RenderObject) {
+  const { canvasX, canvasY } = worldToScreen(me, tree);
 
   context.drawImage(
-    getAsset('portal.png'),
+    getAsset('tree.png'),
     canvasX - 100,
     canvasY - 100,
     200,
@@ -14,17 +14,17 @@ export function renderPortal(me: RenderObject, portal: RenderObject) {
   );
 }
 
-export function renderPortalHP(me: RenderObject, portal: RenderObject) {
-  // Draw HP bar at top-center of screen for the portal
+export function renderTreeHP(me: RenderObject, tree: RenderObject) {
+  // Draw HP bar at top-center of screen for the tree
   const barWidth = 200;
   const barHeight = 16;
   const barX = (canvas.width - barWidth) / 2;
   const barY = 10;
 
-  context.fillStyle = PORTAL_BG;
+  context.fillStyle = TREE_BG;
   context.fillRect(barX, barY, barWidth, barHeight);
 
-  const ratio = Math.max(0, (portal.hp || 0) / (portal.maxHp || 1));
+  const ratio = Math.max(0, (tree.hp || 0) / (tree.maxHp || 1));
   context.fillStyle = RED_HP;
   context.fillRect(barX, barY, barWidth, barHeight);
 
@@ -36,5 +36,5 @@ export function renderPortalHP(me: RenderObject, portal: RenderObject) {
   context.font = 'bold 12px monospace';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.fillText(`Portal ${Math.ceil(portal.hp || 0)}/${portal.maxHp}`, canvas.width / 2, barY + barHeight / 2);
+  context.fillText(`Tree ${Math.ceil(tree.hp || 0)}/${tree.maxHp}`, canvas.width / 2, barY + barHeight / 2);
 }

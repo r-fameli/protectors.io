@@ -1,7 +1,7 @@
 import GameObject from './object';
 import Constants from '../shared/constants';
 
-class Portal extends GameObject {
+class Tree extends GameObject {
   radius: number;
   hp: number;
   maxHp: number;
@@ -9,8 +9,8 @@ class Portal extends GameObject {
   constructor(id: string, x: number, y: number) {
     super(id, x, y, 0, 0);
     this.radius = 100;
-    this.hp = Constants.PORTAL_MAX_HP;
-    this.maxHp = Constants.PORTAL_MAX_HP;
+    this.hp = Constants.TREE_MAX_HP;
+    this.maxHp = Constants.TREE_MAX_HP;
   }
 
   takeDamage(amount: number) {
@@ -27,4 +27,4 @@ class Portal extends GameObject {
   }
 }
 
-export default Portal;
+export default Tree;
