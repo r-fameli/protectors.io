@@ -1,16 +1,24 @@
 import { getAsset } from '../assets';
 import { canvas, context, worldToScreen, RenderObject } from './common';
-import { TREE_BG, RED_HP, GREEN_HP, WHITE } from '../colors';
+import { TREE_BG, RED_HP, GREEN_HP, WHITE, SHADE_COLOR } from '../colors';
 
 export function renderTree(me: RenderObject, tree: RenderObject) {
+  const { radius } = tree;
+  const treeR = radius || 200;
   const { canvasX, canvasY } = worldToScreen(me, tree);
+
+  // Shade circle around tree
+  context.beginPath();
+  context.arc(canvasX, canvasY, treeR * 3, 0, 2 * Math.PI);
+  context.fillStyle = SHADE_COLOR;
+  context.fill();
 
   context.drawImage(
     getAsset('tree.png'),
-    canvasX - 100,
-    canvasY - 100,
-    200,
-    200,
+    canvasX - treeR,
+    canvasY - treeR,
+    treeR * 2,
+    treeR * 2,
   );
 }
 

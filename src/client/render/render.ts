@@ -3,7 +3,7 @@ import { getCurrentState } from '../state';
 import input from '../input';
 
 import { canvas, context, MAP_SIZE, RenderObject, isNear, forEachNearby } from './common';
-import { HITBOX_STROKE, CANVAS_BLACK, GRADIENT_CENTER, GRADIENT_EDGE } from '../colors';
+import { HITBOX_STROKE, CANVAS_BLACK, BG_COLOR } from '../colors';
 import { renderPlayer } from './player';
 import { renderMob } from './mob';
 import { renderDeployable } from './deployable';
@@ -32,17 +32,8 @@ let showHitboxes = false;
 
 // ── Background ─────────────────────────────────────────────
 
-function renderBackground(x: number, y: number) {
-  const backgroundX = MAP_SIZE / 2 - x + canvas.width / 2;
-  const backgroundY = MAP_SIZE / 2 - y + canvas.height / 2;
-  const backgroundGradient = context.createRadialGradient(
-    backgroundX, backgroundY, MAP_SIZE / 10,
-    backgroundX, backgroundY, MAP_SIZE / 2,
-  );
-  backgroundGradient.addColorStop(0, GRADIENT_CENTER);
-  backgroundGradient.addColorStop(0.4, GRADIENT_EDGE);
-  backgroundGradient.addColorStop(1, GRADIENT_EDGE);
-  context.fillStyle = backgroundGradient;
+function renderBackground() {
+  context.fillStyle = BG_COLOR;
   context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -68,7 +59,7 @@ function render() {
 
   const { me, others, bullets, trees, mobs, deployables, caltrops, expOrbs } = getCurrentState();
   if (me) {
-    renderBackground(me.x, me.y);
+    renderBackground();
 
     // Map border
     context.strokeStyle = CANVAS_BLACK;
@@ -116,7 +107,7 @@ function renderMainMenu() {
   const t = Date.now() / 7500;
   const x = MAP_SIZE / 2 + 800 * Math.cos(t);
   const y = MAP_SIZE / 2 + 800 * Math.sin(t);
-  renderBackground(x, y);
+  renderBackground();
 
   animationFrameRequestId = requestAnimationFrame(renderMainMenu);
 }

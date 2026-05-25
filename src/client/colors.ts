@@ -27,7 +27,8 @@ export const CANVAS_BLUE = 'blue';
 export const CANVAS_GREEN = 'green';
 export const CANVAS_YELLOW = 'yellow';
 
-// ── Background gradient ─────────────────────────────────────
+export const SHADE_COLOR = 'rgba(0, 0, 0, 0.35)';
 
-export const GRADIENT_CENTER = '#320202ff';
-export const GRADIENT_EDGE = '#545855ff';
+// ── Background ──────────────────────────────────────────────
+
+export const BG_COLOR = '#254F22';
