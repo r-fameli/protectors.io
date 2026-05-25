@@ -1,10 +1,11 @@
 import { getAsset } from '../assets';
 import { canvas, context, worldToScreen, RenderObject } from './common';
 import { TREE_BG, RED_HP, GREEN_HP, WHITE, SHADE_COLOR } from '../colors';
+import Constants from '../../shared/constants';
 
 export function renderTree(me: RenderObject, tree: RenderObject) {
   const { radius } = tree;
-  const treeR = radius || 200;
+  const treeR = radius || Constants.TREE_RADIUS;
   const { canvasX, canvasY } = worldToScreen(me, tree);
 
   // Shade circle around tree

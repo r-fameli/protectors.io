@@ -8,7 +8,7 @@ class Tree extends GameObject {
 
   constructor(id: string, x: number, y: number) {
     super(id, x, y, 0, 0);
-    this.radius = 200;
+    this.radius = Constants.TREE_RADIUS;
     this.hp = Constants.TREE_MAX_HP;
     this.maxHp = Constants.TREE_MAX_HP;
   }
