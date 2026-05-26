@@ -23,7 +23,7 @@ export const CHAINSAWER: MobConfig = {
 };
 
 export const LOGHOUSE: MobConfig = {
-    BASE_HEALTH: 1000,
+    BASE_HEALTH: 700,
     BASE_SPEED: 0,
     BASE_RADIUS: 60,
     BASE_SPAWN_INTERVAL: 30,

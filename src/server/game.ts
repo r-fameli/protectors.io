@@ -247,7 +247,7 @@ class Game {
     // Loghouses spawn lumberjacks around them
     this.mobs.filter((m): m is Loghouse => m.mobType === 'loghouse' && m.hp > 0).forEach(loghouse => {
       if (loghouse.advanceLumberjackTimer(dt)) {
-        const count = 2 + Math.floor(Math.random() * 3);
+        const count = Math.floor(Math.random() * 3);
         for (let i = 0; i < count; i++) {
           const angle = Math.random() * 2 * Math.PI;
           const dist = 40 + Math.random() * 30;
