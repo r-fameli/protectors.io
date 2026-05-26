@@ -22,10 +22,10 @@ export const CHAINSAWER: MobConfig = {
     XP_DROP: 30,
 };
 
-export const PALADIN: MobConfig = {
-    BASE_HEALTH: 250,
-    BASE_SPEED: 35,
-    BASE_RADIUS: 30,
-    BASE_SPAWN_INTERVAL: 10,
-    XP_DROP: 30,
+export const LOGHOUSE: MobConfig = {
+    BASE_HEALTH: 1000,
+    BASE_SPEED: 0,
+    BASE_RADIUS: 60,
+    BASE_SPAWN_INTERVAL: 30,
+    XP_DROP: 100,
 };

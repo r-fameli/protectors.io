@@ -5,12 +5,13 @@ import Bullet from "./bullet";
 import Mob from "./mobs/mob";
 import Lumberjack from "./mobs/lumberjack";
 import Chainsawer from "./mobs/chainsawer";
+import Loghouse from "./mobs/loghouse";
 import Turret from "./weapons/turret";
 import Springer from "./weapons/springer";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
 import { BasicTurretConfig, SpringerConfig } from "../shared/weapon-configs";
-import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG } from "../shared/mob-configs";
+import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 
 function randomBoundaryPosition(): { x: number; y: number } {
@@ -39,6 +40,8 @@ class Game {
   lumberjackIdCounter: number;
   chainsawerSpawnTimer: number;
   chainsawerIdCounter: number;
+  loghouseSpawnTimer: number;
+  loghouseIdCounter: number;
 
   constructor() {
     this.sockets = {};
@@ -55,6 +58,8 @@ class Game {
     this.lumberjackIdCounter = 0;
     this.chainsawerSpawnTimer = 0;
     this.chainsawerIdCounter = 0;
+    this.loghouseSpawnTimer = 0;
+    this.loghouseIdCounter = 0;
     setInterval(this.update.bind(this), 1000 / 60);
 
     this.trees.push(new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
@@ -116,6 +121,23 @@ class Game {
     this.mobs.push(chainsawer);
   }
 
+  spawnLoghouse() {
+    // Place far from tree center
+    const center = Constants.MAP_SIZE / 2;
+    const minDist = Constants.MAP_SIZE * 0.35;
+    const maxDist = Constants.MAP_SIZE * 0.45;
+    const angle = Math.random() * 2 * Math.PI;
+    const dist = minDist + Math.random() * (maxDist - minDist);
+    this.loghouseIdCounter++;
+    const loghouse = new Loghouse(
+      `loghouse_${this.loghouseIdCounter}`,
+      center + Math.cos(angle) * dist,
+      center + Math.sin(angle) * dist,
+      center, center,
+    );
+    this.mobs.push(loghouse);
+  }
+
   private tryPlaceDeployable(
     dt: number,
     player: Player,
@@ -171,6 +193,13 @@ class Game {
       this.spawnChainsawer();
     }
 
+    // Spawn loghouses
+    this.loghouseSpawnTimer += dt;
+    while (this.loghouseSpawnTimer >= LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL) {
+      this.loghouseSpawnTimer -= LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL;
+      this.spawnLoghouse();
+    }
+
     // Update bullets
     const bulletsToRemove: Bullet[] = [];
     this.bullets.forEach((bullet) => {
@@ -213,6 +242,24 @@ class Game {
     });
     reachedMobs.forEach(mob => {
       this.trees.forEach(p => p.takeDamage(mob.maxHp));
+    });
+
+    // Loghouses spawn lumberjacks around them
+    this.mobs.filter((m): m is Loghouse => m.mobType === 'loghouse' && m.hp > 0).forEach(loghouse => {
+      if (loghouse.advanceLumberjackTimer(dt)) {
+        const count = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < count; i++) {
+          const angle = Math.random() * 2 * Math.PI;
+          const dist = 40 + Math.random() * 30;
+          const lumberjack = new Lumberjack(
+            `lumberjack_${Math.random().toString(36).slice(2, 8)}`,
+            loghouse.x + Math.cos(angle) * dist,
+            loghouse.y + Math.sin(angle) * dist,
+            Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
+          );
+          this.mobs.push(lumberjack);
+        }
+      }
     });
 
     // Remove expired deployables
@@ -347,6 +394,8 @@ class Game {
     this.lumberjackIdCounter = 0;
     this.chainsawerSpawnTimer = 0;
     this.chainsawerIdCounter = 0;
+    this.loghouseSpawnTimer = 0;
+    this.loghouseIdCounter = 0;
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
   }

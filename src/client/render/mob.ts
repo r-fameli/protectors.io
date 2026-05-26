@@ -5,6 +5,7 @@ import { context, worldToScreen, RenderObject } from './common';
 const MOB_SPRITES: Record<string, string> = {
   lumberjack: 'mobs/lumberjack.png',
   chainsawer: 'mobs/chainsawer.png',
+  loghouse: 'mobs/loghouse.png',
 };
 
 export function renderMob(me: RenderObject, mob: RenderObject) {
