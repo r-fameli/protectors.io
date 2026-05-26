@@ -1,4 +1,5 @@
 import GameObject from "../object";
+import Constants from "../../shared/constants";
 import { MobConfig } from "../../shared/mob-configs";
 
 class Mob extends GameObject {
@@ -23,11 +24,19 @@ class Mob extends GameObject {
 
   update(dt: number): boolean {
     this.direction = Math.atan2(this.targetY - this.y, this.targetX - this.x);
-    super.update(dt);
-
     const dx = this.x - this.targetX;
     const dy = this.y - this.targetY;
-    return (dx * dx + dy * dy) < 400;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const stopDist = Constants.TREE_RADIUS + this.radius;
+
+    if (dist > stopDist) {
+      this.isMoving = true;
+      super.update(dt);
+    } else {
+      this.isMoving = false;
+    }
+
+    return false; // never removed on reaching the tree
   }
 
   takeDamage(amount: number) {

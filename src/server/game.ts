@@ -233,15 +233,20 @@ class Game {
       );
     });
 
-    // Update mobs — damage tree when one reaches it
-    const reachedMobs: Mob[] = [];
-    this.mobs = this.mobs.filter(mob => {
-      const reached = mob.update(dt);
-      if (reached) reachedMobs.push(mob);
-      return !reached;
-    });
-    reachedMobs.forEach(mob => {
-      this.trees.forEach(p => p.takeDamage(mob.maxHp));
+    // Update mobs — move toward tree, deal DOT at tree edge
+    this.mobs.forEach(mob => mob.update(dt));
+
+    // Mobs at the tree edge deal damage over time
+    this.trees.forEach(tree => {
+      this.mobs.forEach(mob => {
+        if (mob.hp <= 0) return;
+        const dx = mob.x - tree.x;
+        const dy = mob.y - tree.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < Constants.TREE_RADIUS + mob.radius) {
+          tree.takeDamage(mob.maxHp * dt * 0.1);
+        }
+      });
     });
 
     // Loghouses spawn lumberjacks around them
