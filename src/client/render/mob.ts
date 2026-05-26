@@ -3,15 +3,15 @@ import { DARK_GRAY, RED_HP, GREEN_HP } from '../colors';
 import { context, worldToScreen, RenderObject } from './common';
 
 const MOB_SPRITES: Record<string, string> = {
-  angel: 'mobs/angel.png',
-  paladin: 'mobs/paladin.png',
+  lumberjack: 'mobs/lumberjack.png',
+  chainsawer: 'mobs/chainsawer.png',
 };
 
 export function renderMob(me: RenderObject, mob: RenderObject) {
   const { x, y, direction, hp, maxHp, radius, mobType } = mob;
   const r = radius || 20;
   const { canvasX, canvasY } = worldToScreen(me, mob);
-  const sprite = MOB_SPRITES[mobType || ''] || 'angel.png';
+  const sprite = MOB_SPRITES[mobType || ''] || 'mobs/lumberjack.png';
 
   // Sprite
   context.save();

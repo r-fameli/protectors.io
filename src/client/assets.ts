@@ -1,7 +1,7 @@
 const ASSET_NAMES = [
   'player.png',
-  'mobs/angel.png',
-  'mobs/paladin.png',
+  'mobs/lumberjack.png',
+  'mobs/chainsawer.png',
   'objects/tree.png',
   'objects/exp.png',
   'projectiles/bullet.svg',

@@ -3,14 +3,14 @@ import Player from "./player";
 import Tree from "./tree";
 import Bullet from "./bullet";
 import Mob from "./mobs/mob";
-import Angel from "./mobs/angel";
-import Paladin from "./mobs/paladin";
+import Lumberjack from "./mobs/lumberjack";
+import Chainsawer from "./mobs/chainsawer";
 import Turret from "./weapons/turret";
 import Springer from "./weapons/springer";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
 import { BasicTurretConfig, SpringerConfig } from "../shared/weapon-configs";
-import { ANGEL as ANGEL_CONFIG, PALADIN as PALADIN_CONFIG } from "../shared/mob-configs";
+import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 
 function randomBoundaryPosition(): { x: number; y: number } {
@@ -35,10 +35,10 @@ class Game {
   expOrbs: ExpOrb[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
-  angelSpawnTimer: number;
-  angelIdCounter: number;
-  paladinSpawnTimer: number;
-  paladinIdCounter: number;
+  lumberjackSpawnTimer: number;
+  lumberjackIdCounter: number;
+  chainsawerSpawnTimer: number;
+  chainsawerIdCounter: number;
 
   constructor() {
     this.sockets = {};
@@ -51,10 +51,10 @@ class Game {
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
-    this.angelSpawnTimer = 0;
-    this.angelIdCounter = 0;
-    this.paladinSpawnTimer = 0;
-    this.paladinIdCounter = 0;
+    this.lumberjackSpawnTimer = 0;
+    this.lumberjackIdCounter = 0;
+    this.chainsawerSpawnTimer = 0;
+    this.chainsawerIdCounter = 0;
     setInterval(this.update.bind(this), 1000 / 60);
 
     this.trees.push(new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
@@ -94,26 +94,26 @@ class Game {
     }
   }
 
-  spawnAngel() {
+  spawnLumberjack() {
     const pos = randomBoundaryPosition();
-    this.angelIdCounter++;
-    const angel = new Angel(
-      `angel_${this.angelIdCounter}`,
+    this.lumberjackIdCounter++;
+    const lumberjack = new Lumberjack(
+      `lumberjack_${this.lumberjackIdCounter}`,
       pos.x, pos.y,
       Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
     );
-    this.mobs.push(angel);
+    this.mobs.push(lumberjack);
   }
 
-  spawnPaladin() {
+  spawnChainsawer() {
     const pos = randomBoundaryPosition();
-    this.paladinIdCounter++;
-    const paladin = new Paladin(
-      `paladin_${this.paladinIdCounter}`,
+    this.chainsawerIdCounter++;
+    const chainsawer = new Chainsawer(
+      `chainsawer_${this.chainsawerIdCounter}`,
       pos.x, pos.y,
       Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
     );
-    this.mobs.push(paladin);
+    this.mobs.push(chainsawer);
   }
 
   private tryPlaceDeployable(
@@ -157,18 +157,18 @@ class Game {
     // Don't simulate when no players are connected
     if (Object.keys(this.sockets).length === 0) return;
 
-    // Spawn angels
-    this.angelSpawnTimer += dt;
-    while (this.angelSpawnTimer >= ANGEL_CONFIG.BASE_SPAWN_INTERVAL) {
-      this.angelSpawnTimer -= ANGEL_CONFIG.BASE_SPAWN_INTERVAL;
-      this.spawnAngel();
+    // Spawn lumberjacks
+    this.lumberjackSpawnTimer += dt;
+    while (this.lumberjackSpawnTimer >= LUMBERJACK_CONFIG.BASE_SPAWN_INTERVAL) {
+      this.lumberjackSpawnTimer -= LUMBERJACK_CONFIG.BASE_SPAWN_INTERVAL;
+      this.spawnLumberjack();
     }
 
-    // Spawn paladins
-    this.paladinSpawnTimer += dt;
-    while (this.paladinSpawnTimer >= PALADIN_CONFIG.BASE_SPAWN_INTERVAL) {
-      this.paladinSpawnTimer -= PALADIN_CONFIG.BASE_SPAWN_INTERVAL;
-      this.spawnPaladin();
+    // Spawn chainsawers
+    this.chainsawerSpawnTimer += dt;
+    while (this.chainsawerSpawnTimer >= CHAINSAWER_CONFIG.BASE_SPAWN_INTERVAL) {
+      this.chainsawerSpawnTimer -= CHAINSAWER_CONFIG.BASE_SPAWN_INTERVAL;
+      this.spawnChainsawer();
     }
 
     // Update bullets
@@ -343,10 +343,10 @@ class Game {
     this.deployables = [];
     this.caltrops = [];
     this.expOrbs = [];
-    this.angelSpawnTimer = 0;
-    this.angelIdCounter = 0;
-    this.paladinSpawnTimer = 0;
-    this.paladinIdCounter = 0;
+    this.lumberjackSpawnTimer = 0;
+    this.lumberjackIdCounter = 0;
+    this.chainsawerSpawnTimer = 0;
+    this.chainsawerIdCounter = 0;
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
   }
