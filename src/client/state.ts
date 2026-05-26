@@ -49,6 +49,12 @@ export interface WeaponState {
   maxCooldown: number;
 }
 
+export interface UpgradeLevels {
+  cooldown: number;
+  range: number;
+  damage: number;
+}
+
 export interface PlayerState {
   id: string;
   x: number;
@@ -59,6 +65,8 @@ export interface PlayerState {
   exp: number;
   level: number;
   nextLevelExp: number;
+  upgrades: UpgradeLevels;
+  pendingUpgrades: number;
 }
 
 interface BulletState {

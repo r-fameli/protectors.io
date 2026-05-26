@@ -99,6 +99,13 @@ class Game {
     }
   }
 
+  handleUpgrade(socket: import("socket.io").Socket, type: 'cooldown' | 'range' | 'damage') {
+    const player = this.players[socket.id];
+    if (player && player.pendingUpgrades > 0) {
+      player.applyUpgrade(type);
+    }
+  }
+
   spawnLumberjack() {
     const pos = randomBoundaryPosition();
     this.lumberjackIdCounter++;
@@ -161,9 +168,13 @@ class Game {
       });
 
       if (!blocked) {
-        cooldown += config.COOLDOWN;
+        cooldown += config.COOLDOWN * player.cooldownMultiplier;
         const id = incCounter();
-        this.deployables.push(create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py));
+        const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py) as Turret | Springer;
+        // Apply range and damage upgrades
+        d.attackRadius *= player.rangeMultiplier;
+        d.damageMultiplier = player.damageMultiplier;
+        this.deployables.push(d);
       } else {
         cooldown = 0;
       }
@@ -290,7 +301,7 @@ class Game {
       turret.fireCooldown -= dt * 1000;
       if (closest && turret.fireCooldown <= 0) {
         turret.fireCooldown = turret.fireCdInterval;
-        this.bullets.push(new Bullet(turret.id, turret.x, turret.y, turret.aimDirection, BasicTurretConfig.DAMAGE));
+        this.bullets.push(new Bullet(turret.id, turret.x, turret.y, turret.aimDirection, Math.round(BasicTurretConfig.DAMAGE * turret.damageMultiplier)));
       } else if (!closest) {
         turret.fireCooldown = 0;
       }
@@ -302,12 +313,13 @@ class Game {
       if (springer.caltropCooldown <= 0) {
         springer.caltropCooldown += 3000;
         const angle = Math.random() * 2 * Math.PI;
-        const dist = Math.random() * springer.caltropRadius;
+        const dist = Math.random() * springer.attackRadius;
         const cx = springer.x + Math.cos(angle) * dist;
         const cy = springer.y + Math.sin(angle) * dist;
         this.caltrops.push(new Caltrop(
           `${springer.id}_caltrop_${Date.now()}`,
           cx, cy,
+          Math.round(SpringerConfig.CALTROP_DAMAGE * springer.damageMultiplier),
         ));
       }
     });

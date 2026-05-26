@@ -7,13 +7,13 @@ class Caltrop extends GameObject {
   radius: number;
   damage: number;
 
-  constructor(id: string, x: number, y: number) {
+  constructor(id: string, x: number, y: number, damageOverride?: number) {
     super(id, x, y, 0, 0);
     this.isMoving = false;
     this.spawnTime = Date.now();
     this.duration = SpringerConfig.CALTROP_DURATION;
     this.radius = 24;
-    this.damage = SpringerConfig.CALTROP_DAMAGE;
+    this.damage = damageOverride !== undefined ? damageOverride : SpringerConfig.CALTROP_DAMAGE;
   }
 
   update(dt: number): boolean {

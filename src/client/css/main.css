@@ -75,6 +75,48 @@ button:focus {
 
 
 
+/* ── Upgrade panel ─────────────────────────────────────────── */
+
+#upgrade-panel {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.88);
+  border-radius: 8px 0 0 8px;
+  text-align: center;
+  color: white;
+  font-family: monospace;
+  z-index: 10;
+  min-width: 200px;
+}
+
+#upgrade-panel h3 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #3498db;
+}
+
+.upgrade-btn {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  font-size: 13px;
+  font-family: monospace;
+  color: white;
+  background-color: #2c3e50;
+  border: 1px solid #3498db;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.upgrade-btn:hover {
+  background-color: #3498db;
+}
+
 #disconnect-modal {
   position: fixed;
   top: 0;

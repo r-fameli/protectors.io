@@ -10,6 +10,7 @@ class Turret extends GameObject {
   attackRadius: number;
   fireCdInterval: number;
   aimDirection: number;
+  damageMultiplier: number;
 
   constructor(id: string, x: number, y: number, dir: number, config: TurretConfig) {
     super(id, x, y, dir, 0);
@@ -22,6 +23,7 @@ class Turret extends GameObject {
     this.attackRadius = config.ATTACK_RADIUS;
     this.fireCdInterval = config.FIRE_COOLDOWN;
     this.aimDirection = dir;
+    this.damageMultiplier = 1;
   }
 
   update(dt: number): boolean {

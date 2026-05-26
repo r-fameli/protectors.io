@@ -28,7 +28,7 @@ export const SpringerConfig = {
     DURATION: 30000,
     RADIUS: 20,
     ID_PREFIX: 'springer',
-    CALTROP_RADIUS: 180,
+    ATTACK_RADIUS: 180,
     CALTROP_DURATION: 35000,
     CALTROP_DAMAGE: 70,
 };

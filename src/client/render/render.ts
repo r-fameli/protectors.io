@@ -59,6 +59,31 @@ function render() {
 
   const { me, others, bullets, trees, mobs, deployables, caltrops, expOrbs } = getCurrentState();
   if (me) {
+    // Show upgrade panel when upgrades are pending
+    const panel = document.getElementById('upgrade-panel');
+    const buttons = panel?.querySelectorAll<HTMLButtonElement>('.upgrade-btn');
+    if (panel && buttons) {
+      if (me.pendingUpgrades > 0) {
+        panel.classList.remove('hidden');
+
+        // Update button labels with current upgrade values
+        const labels: Record<string, { label: string; next: (level: number) => string }> = {
+          cooldown: { label: 'Faster Cooldowns', next: (l: number) => `-${Math.round((1 - Math.pow(0.9, l + 1)) * 100)}%` },
+          range: { label: 'Bigger Weapon Range', next: (l: number) => `+${Math.round(0.1 * (l + 1) * 100)}%` },
+          damage: { label: 'Damage Increase', next: (l: number) => `+${Math.round(0.15 * (l + 1) * 100)}%` },
+        };
+        buttons.forEach(btn => {
+          const type = btn.getAttribute('data-upgrade') as string;
+          const info = labels[type];
+          if (info) {
+            const level = me.upgrades[type as keyof typeof me.upgrades] || 0;
+            btn.textContent = `${info.label} ${info.next(level)}`;
+          }
+        });
+      } else {
+        panel.classList.add('hidden');
+      }
+    }
     renderBackground();
 
     // Map border

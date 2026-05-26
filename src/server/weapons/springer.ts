@@ -6,8 +6,9 @@ class Springer extends GameObject {
   spawnTime: number;
   duration: number;
   radius: number;
-  caltropRadius: number;
+  attackRadius: number;
   caltropCooldown: number;
+  damageMultiplier: number;
 
   constructor(id: string, x: number, y: number) {
     super(id, x, y, 0, 0);
@@ -16,8 +17,9 @@ class Springer extends GameObject {
     this.spawnTime = Date.now();
     this.duration = SpringerConfig.DURATION;
     this.radius = SpringerConfig.RADIUS;
-    this.caltropRadius = SpringerConfig.CALTROP_RADIUS;
+    this.attackRadius = SpringerConfig.ATTACK_RADIUS;
     this.caltropCooldown = 0;
+    this.damageMultiplier = 1;
   }
 
   update(dt: number): boolean {

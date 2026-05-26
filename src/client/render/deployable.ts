@@ -3,20 +3,21 @@ import { DARK_GRAY, BLUE_ACCENT, WEAPON_RING } from '../colors';
 import { context, worldToScreen, RenderObject } from './common';
 import { BasicTurretConfig, SpringerConfig } from '../../shared/weapon-configs';
 
+const WEAPON_RADII: Record<string, number> = {
+  turret: BasicTurretConfig.ATTACK_RADIUS,
+  springer: SpringerConfig.ATTACK_RADIUS,
+};
+
 export function renderDeployable(me: RenderObject, obj: RenderObject) {
   const { type, x, y, direction, radius, remainingRatio, aimDirection } = obj;
   const r = radius || 20;
   const { canvasX, canvasY } = worldToScreen(me, obj);
 
   // Radius indicator
-  if (type === 'turret') {
+  const attackR = WEAPON_RADII[type || ''];
+  if (attackR) {
     context.beginPath();
-    context.arc(canvasX, canvasY, BasicTurretConfig.ATTACK_RADIUS, 0, 2 * Math.PI);
-    context.fillStyle = WEAPON_RING;
-    context.fill();
-  } else if (type === 'springer') {
-    context.beginPath();
-    context.arc(canvasX, canvasY, SpringerConfig.CALTROP_RADIUS, 0, 2 * Math.PI);
+    context.arc(canvasX, canvasY, attackR, 0, 2 * Math.PI);
     context.fillStyle = WEAPON_RING;
     context.fill();
   }

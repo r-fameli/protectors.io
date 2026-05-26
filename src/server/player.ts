@@ -12,6 +12,12 @@ interface WeaponState {
   maxCooldown: number;
 }
 
+interface UpgradeLevels {
+  cooldown: number;
+  range: number;
+  damage: number;
+}
+
 class Player extends GameObject {
   username: string;
   hp: number;
@@ -23,6 +29,8 @@ class Player extends GameObject {
   exp: number;
   level: number;
   nextLevelExp: number;
+  upgrades: UpgradeLevels;
+  pendingUpgrades: number;
 
   constructor(id: string, username: string, x: number, y: number) {
     super(id, x, y, Math.random() * 2 * Math.PI, Constants.PLAYER_SPEED);
@@ -36,6 +44,8 @@ class Player extends GameObject {
     this.exp = 0;
     this.level = 1;
     this.nextLevelExp = EXP_BASE_THRESHOLD;
+    this.upgrades = { cooldown: 0, range: 0, damage: 0 };
+    this.pendingUpgrades = 0;
   }
 
   addExp(amount: number) {
@@ -44,8 +54,23 @@ class Player extends GameObject {
       this.exp -= this.nextLevelExp;
       this.level++;
       this.nextLevelExp = Math.floor(EXP_BASE_THRESHOLD * Math.pow(1.08, this.level - 1));
+      this.pendingUpgrades++;
     }
   }
+
+  applyUpgrade(type: 'cooldown' | 'range' | 'damage') {
+    if (this.pendingUpgrades > 0) {
+      this.upgrades[type]++;
+      this.pendingUpgrades--;
+    }
+  }
+
+  /** Cooldown multiplier (lower = faster). */
+  get cooldownMultiplier(): number { return Math.pow(0.9, this.upgrades.cooldown); }
+  /** Range multiplier. */
+  get rangeMultiplier(): number { return 1 + 0.1 * this.upgrades.range; }
+  /** Damage multiplier. */
+  get damageMultiplier(): number { return 1 + 0.15 * this.upgrades.damage; }
 
   update(dt: number) {
     super.update(dt);
@@ -71,6 +96,8 @@ class Player extends GameObject {
       exp: this.exp,
       level: this.level,
       nextLevelExp: this.nextLevelExp,
+      upgrades: this.upgrades,
+      pendingUpgrades: this.pendingUpgrades,
     };
   }
 }
