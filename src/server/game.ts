@@ -7,12 +7,13 @@ import Lumberjack from "./mobs/lumberjack";
 import Chainsawer from "./mobs/chainsawer";
 import Loghouse from "./mobs/loghouse";
 import Foreman from "./mobs/foreman";
+import Harvester from "./mobs/harvester";
 import Turret from "./weapons/turret";
 import Springer from "./weapons/springer";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
 import { BasicTurretConfig, SpringerConfig } from "../shared/weapon-configs";
-import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG } from "../shared/mob-configs";
+import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG, HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 import { MobSpawner } from "./systems/mob-spawner";
 
@@ -57,6 +58,8 @@ class Game {
         const dist = minDist + Math.random() * (maxDist - minDist);
         return { x: center + Math.cos(angle) * dist, y: center + Math.sin(angle) * dist };
       });
+    this.mobSpawner.register('harvester', HARVESTER_CONFIG.BASE_SPAWN_INTERVAL,
+      (id, x, y) => new Harvester(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
     setInterval(this.update.bind(this), 1000 / 60);
 
     this.trees.push(new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
@@ -195,7 +198,12 @@ class Game {
         const dy = mob.y - tree.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < Constants.TREE_RADIUS + mob.radius) {
-          tree.takeDamage(mob.maxHp * dt * 0.1);
+          if (mob.mobType === 'harvester') {
+            tree.takeDamage(HARVESTER_CONFIG.BURST_DAMAGE);
+            mob.hp = 0;
+          } else {
+            tree.takeDamage(mob.maxHp * dt * 0.1);
+          }
         }
       });
     });

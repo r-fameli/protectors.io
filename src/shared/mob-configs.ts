@@ -30,6 +30,15 @@ export const LOGHOUSE: MobConfig = {
     XP_DROP: 100,
 };
 
+export const HARVESTER: MobConfig & { BURST_DAMAGE: number } = {
+    BASE_HEALTH: 1000,
+    BASE_SPEED: 15,
+    BASE_RADIUS: 60,
+    BASE_SPAWN_INTERVAL: 20,
+    XP_DROP: 50,
+    BURST_DAMAGE: 300,
+};
+
 export const FOREMAN: MobConfig & {
     BUFF_RADIUS: number;
     BUFF_DURATION: number;

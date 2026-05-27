@@ -8,6 +8,7 @@ const MOB_SPRITES: Record<string, string> = {
   chainsawer: 'mobs/chainsawer.png',
   loghouse: 'mobs/loghouse.png',
   foreman: 'mobs/foreman.png',
+  harvester: 'mobs/harvester.png',
 };
 
 export function renderMob(me: RenderObject, mob: RenderObject) {
