@@ -10,9 +10,11 @@ import Foreman from "./mobs/foreman";
 import Harvester from "./mobs/harvester";
 import Turret from "./weapons/turret";
 import Springer from "./weapons/springer";
+import Spiderweb from "./weapons/spiderweb";
+import Spider from "./weapons/spider";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
-import { BasicTurretConfig, SpringerConfig } from "../shared/weapon-configs";
+import { BasicTurretConfig, SpringerConfig, SpiderwebConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
 import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG, HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 import { MobSpawner } from "./systems/mob-spawner";
@@ -23,12 +25,13 @@ class Game {
   trees: Tree[];
   bullets: Bullet[];
   mobs: Mob[];
-  deployables: (Turret | Springer)[];
+  deployables: (Turret | Springer | Spiderweb)[];
   caltrops: Caltrop[];
   expOrbs: ExpOrb[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
   mobSpawner: MobSpawner;
+  spiders: Spider[];
 
   constructor() {
     this.sockets = {};
@@ -38,6 +41,7 @@ class Game {
     this.mobs = [];
     this.deployables = [];
     this.caltrops = [];
+    this.spiders = [];
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
@@ -113,7 +117,7 @@ class Game {
     setCd: (v: number) => void,
     incCounter: () => number,
     config: { RADIUS: number; COOLDOWN: number; ID_PREFIX: string },
-    create: (id: string, x: number, y: number) => Turret | Springer,
+    create: (id: string, x: number, y: number) => Turret | Springer | Spiderweb,
   ) {
     let cooldown = cd();
     cooldown -= dt * 1000;
@@ -131,7 +135,7 @@ class Game {
       if (!blocked) {
         cooldown += config.COOLDOWN * player.cooldownMultiplier;
         const id = incCounter();
-        const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py) as Turret | Springer;
+        const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py) as Turret | Springer | Spiderweb;
         // Apply range and damage upgrades
         d.attackRadius *= player.rangeMultiplier;
         d.damageMultiplier = player.damageMultiplier;
@@ -141,6 +145,15 @@ class Game {
       }
     }
     setCd(cooldown);
+  }
+
+  private createDeployable(type: string, id: string, x: number, y: number, dir: number): Turret | Springer | Spiderweb {
+    switch (type) {
+      case 'turret': return new Turret(id, x, y, dir, BasicTurretConfig);
+      case 'springer': return new Springer(id, x, y);
+      case 'spiderweb': return new Spiderweb(id, x, y);
+      default: throw new Error(`Unknown deployable type: ${type}`);
+    }
   }
 
   update() {
@@ -153,6 +166,19 @@ class Game {
 
     // Spawn mobs
     this.mobSpawner.update(dt, this.mobs);
+
+    // Reset slow, apply spiderweb slows
+    this.mobs.forEach(m => { m.slowMultiplier = 1; });
+    for (const d of this.deployables) {
+      if (d.type !== 'spiderweb') continue;
+      const web = d as Spiderweb;
+      for (const mob of this.mobs) {
+        if (mob.hp <= 0) continue;
+        if (web.distanceTo(mob) < web.attackRadius + (mob.radius || 0)) {
+          mob.slowMultiplier = web.slowMultiplier;
+        }
+      }
+    }
 
     // Update bullets
     const bulletsToRemove: Bullet[] = [];
@@ -170,21 +196,17 @@ class Game {
       const player = this.players[playerID];
       player.update(dt);
 
-      this.tryPlaceDeployable(dt, player,
-        () => player.turretCooldown,
-        v => { player.turretCooldown = v; },
-        () => ++player.turretIdCounter,
-        BasicTurretConfig,
-        (id, x, y) => new Turret(id, x, y, player.direction, BasicTurretConfig),
-      );
-
-      this.tryPlaceDeployable(dt, player,
-        () => player.springerCooldown,
-        v => { player.springerCooldown = v; },
-        () => ++player.springerIdCounter,
-        SpringerConfig,
-        (id, x, y) => new Springer(id, x, y),
-      );
+      for (const we of WEAPON_ENTRIES) {
+        const slot = player.weaponSlots[we.type];
+        if (!slot) continue;
+        this.tryPlaceDeployable(dt, player,
+          () => slot.cooldown,
+          v => { slot.cooldown = v; },
+          () => ++slot.idCounter,
+          we.config,
+          (id, x, y) => this.createDeployable(we.type, id, x, y, player.direction),
+        );
+      }
     });
 
     // Update mobs — move toward tree, deal DOT at tree edge
@@ -233,6 +255,74 @@ class Game {
 
     // Remove expired deployables
     this.deployables = this.deployables.filter(d => !d.update(dt));
+
+    // Spider cleanup — remove spiders whose web expired
+    const activeWebIds = new Set(
+      this.deployables.filter(d => d.type === 'spiderweb').map(d => d.id),
+    );
+    this.spiders = this.spiders.filter(s => activeWebIds.has(s.parentWebId));
+
+    // Ensure each spiderweb has a spider, move toward mobs, attack
+    for (const d of this.deployables) {
+      if (d.type !== 'spiderweb') continue;
+      const web = d as Spiderweb;
+
+      let spider = this.spiders.find(s => s.parentWebId === web.id);
+      if (!spider) {
+        spider = new Spider(
+          `${web.id}_spider`,
+          web.x, web.y,
+          web.id,
+          Math.round(SpiderwebConfig.SPIDER_DAMAGE * web.damageMultiplier),
+          SpiderwebConfig.SPIDER_ATTACK_INTERVAL,
+        );
+        this.spiders.push(spider);
+      }
+
+      // Find nearest alive mob within web radius (distance from web center, not spider)
+      let target: Mob | null = null;
+      let closestDist = web.attackRadius;
+      for (const mob of this.mobs) {
+        if (mob.hp <= 0) continue;
+        const dist = web.distanceTo(mob);
+        if (dist <= closestDist) {
+          closestDist = dist;
+          target = mob;
+        }
+      }
+
+      if (target) {
+        // Move toward target, clamped to stay inside web radius
+        const dir = Math.atan2(target.y - spider.y, target.x - spider.x);
+        const newX = spider.x + dt * spider.speed * Math.cos(dir);
+        const newY = spider.y + dt * spider.speed * Math.sin(dir);
+        const distFromCenter = Math.sqrt((newX - web.x) ** 2 + (newY - web.y) ** 2);
+        if (distFromCenter <= web.attackRadius) {
+          spider.x = newX;
+          spider.y = newY;
+        } else {
+          // Slide along web edge
+          const edgeAngle = Math.atan2(newY - web.y, newX - web.x);
+          spider.x = web.x + Math.cos(edgeAngle) * web.attackRadius * 0.95;
+          spider.y = web.y + Math.sin(edgeAngle) * web.attackRadius * 0.95;
+        }
+        spider.direction = dir;
+        spider.isMoving = true;
+
+        // Attack when close enough (use spider-to-mob distance)
+        const spiderToTarget = spider.distanceTo(target);
+        const attackRange = 25 + (target.radius || 20);
+        if (spiderToTarget < attackRange) {
+          spider.attackCooldown -= dt * 1000;
+          if (spider.attackCooldown <= 0) {
+            spider.attackCooldown += spider.attackInterval;
+            target.takeDamage(spider.damage * spider.damageMultiplier);
+          }
+        }
+      } else {
+        spider.isMoving = false;
+      }
+    }
 
     // Turrets aim at closest mob + fire
     this.deployables.filter((d): d is Turret => d.type === 'turret').forEach(turret => {
@@ -359,6 +449,7 @@ class Game {
     this.bullets = [];
     this.deployables = [];
     this.caltrops = [];
+    this.spiders = [];
     this.expOrbs = [];
     this.mobSpawner.reset();
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
@@ -397,6 +488,7 @@ class Game {
       mobs: nearbyMobs.map((m) => m.serializeForUpdate()),
       deployables: nearbyDeployables.map((d) => d.serializeForUpdate()),
       caltrops: nearbyCaltrops.map((c) => c.serializeForUpdate()),
+      spiders: this.spiders.map((s) => s.serializeForUpdate()),
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
     };
   }

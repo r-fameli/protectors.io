@@ -12,6 +12,8 @@ const ASSET_NAMES = [
   'weapons/turret-base.png',
   'weapons/turret-head.png',
   'weapons/springer.png',
+  'weapons/spider.png',
+  'areas/spiderweb.png',
 ];
 
 const assets: Record<string, HTMLImageElement> = {};

@@ -38,10 +38,11 @@ interface ServerUpdate {
   mobs: MobState[];
   deployables: DeployableState[];
   caltrops: CaltropState[];
+  spiders: SpiderState[];
   expOrbs: ExpOrbState[];
 }
 
-export type WeaponType = 'turret' | 'springer';
+export type WeaponType = 'turret' | 'springer' | 'spiderweb';
 
 export interface WeaponState {
   type: WeaponType;
@@ -91,6 +92,14 @@ interface CaltropState {
   radius: number;
 }
 
+interface SpiderState {
+  id: string;
+  x: number;
+  y: number;
+  direction: number;
+  radius: number;
+}
+
 interface GameState {
   me?: PlayerState;
   others?: PlayerState[];
@@ -99,6 +108,7 @@ interface GameState {
   mobs?: MobState[];
   deployables?: DeployableState[];
   caltrops?: CaltropState[];
+  spiders?: SpiderState[];
   expOrbs?: ExpOrbState[];
 }
 
@@ -156,6 +166,7 @@ export function getCurrentState(): GameState {
       mobs: latestUpdate.mobs || [],
       deployables: latestUpdate.deployables || [],
       caltrops: latestUpdate.caltrops || [],
+      spiders: latestUpdate.spiders || [],
       expOrbs: latestUpdate.expOrbs || [],
     };
   } else {
@@ -170,6 +181,7 @@ export function getCurrentState(): GameState {
       mobs: next.mobs || [],
       deployables: next.deployables || [],
       caltrops: next.caltrops || [],
+      spiders: next.spiders || [],
       expOrbs: next.expOrbs || [],
     };
   }

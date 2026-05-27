@@ -12,6 +12,7 @@ class Mob extends GameObject {
   xpDrop: number;
   buffTimer: number = 0;
   speedMultiplier: number = 1;
+  slowMultiplier: number = 1;
 
   constructor(id: string, x: number, y: number, targetX: number, targetY: number, config: MobConfig, mobType: string) {
     super(id, x, y, 0, config.BASE_SPEED);
@@ -42,8 +43,8 @@ class Mob extends GameObject {
 
     if (dist > stopDist) {
       this.isMoving = true;
-      this.x += dt * this.speed * this.speedMultiplier * Math.cos(this.direction);
-      this.y += dt * this.speed * this.speedMultiplier * Math.sin(this.direction);
+      this.x += dt * this.speed * this.speedMultiplier * this.slowMultiplier * Math.cos(this.direction);
+      this.y += dt * this.speed * this.speedMultiplier * this.slowMultiplier * Math.sin(this.direction);
     } else {
       this.isMoving = false;
     }
