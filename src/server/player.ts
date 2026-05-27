@@ -34,6 +34,7 @@ class Player extends GameObject {
 
   constructor(id: string, username: string, x: number, y: number) {
     super(id, x, y, Math.random() * 2 * Math.PI, Constants.PLAYER_SPEED);
+    this.isMoving = false;
     this.username = username;
     this.hp = Constants.PLAYER_MAX_HP;
     this.score = 0;
