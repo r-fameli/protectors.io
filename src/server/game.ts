@@ -16,10 +16,18 @@ import Arrow from "./weapons/arrow";
 import Spider from "./weapons/spider";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
-import { BasicTurretConfig, SpringerConfig, SpiderwebConfig, CrossbowConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
+import { BasicTurretConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
 import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG, HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 import { MobSpawner } from "./systems/mob-spawner";
+import {
+  applySpiderwebSlow,
+  updateSpiders,
+  updateTurrets,
+  updateCrossbows,
+  updateSpringers,
+  updateArrows,
+} from "./systems/deployable-system";
 
 class Game {
   sockets: Record<string, import("socket.io").Socket>;
@@ -172,18 +180,8 @@ class Game {
     // Spawn mobs
     this.mobSpawner.update(dt, this.mobs);
 
-    // Reset slow, apply spiderweb slows
-    this.mobs.forEach(m => { m.slowMultiplier = 1; });
-    for (const d of this.deployables) {
-      if (d.type !== 'spiderweb') continue;
-      const web = d as Spiderweb;
-      for (const mob of this.mobs) {
-        if (mob.hp <= 0) continue;
-        if (web.distanceTo(mob) < web.attackRadius + (mob.radius || 0)) {
-          mob.slowMultiplier = web.slowMultiplier;
-        }
-      }
-    }
+    // Deployable behaviors
+    applySpiderwebSlow(this.mobs, this.deployables);
 
     // Update bullets
     const bulletsToRemove: Bullet[] = [];
@@ -260,174 +258,14 @@ class Game {
 
     // Remove expired deployables
     this.deployables = this.deployables.filter(d => !d.update(dt));
-
-    // Spider cleanup — remove spiders whose web expired
-    const activeWebIds = new Set(
-      this.deployables.filter(d => d.type === 'spiderweb').map(d => d.id),
-    );
-    this.spiders = this.spiders.filter(s => activeWebIds.has(s.parentWebId));
-
-    // Ensure each spiderweb has a spider, move toward mobs, attack
-    for (const d of this.deployables) {
-      if (d.type !== 'spiderweb') continue;
-      const web = d as Spiderweb;
-
-      let spider = this.spiders.find(s => s.parentWebId === web.id);
-      if (!spider) {
-        spider = new Spider(
-          `${web.id}_spider`,
-          web.x, web.y,
-          web.id,
-          Math.round(SpiderwebConfig.SPIDER_DAMAGE * web.damageMultiplier),
-          SpiderwebConfig.SPIDER_ATTACK_INTERVAL,
-        );
-        this.spiders.push(spider);
-      }
-
-      // Find nearest alive mob within web radius (distance from web center, not spider)
-      let target: Mob | null = null;
-      let closestDist = web.attackRadius;
-      for (const mob of this.mobs) {
-        if (mob.hp <= 0) continue;
-        const dist = web.distanceTo(mob);
-        if (dist <= closestDist) {
-          closestDist = dist;
-          target = mob;
-        }
-      }
-
-      if (target) {
-        // Move toward target, clamped to stay inside web radius
-        const dir = Math.atan2(target.y - spider.y, target.x - spider.x);
-        const newX = spider.x + dt * spider.speed * Math.cos(dir);
-        const newY = spider.y + dt * spider.speed * Math.sin(dir);
-        const distFromCenter = Math.sqrt((newX - web.x) ** 2 + (newY - web.y) ** 2);
-        if (distFromCenter <= web.attackRadius) {
-          spider.x = newX;
-          spider.y = newY;
-        } else {
-          // Slide along web edge
-          const edgeAngle = Math.atan2(newY - web.y, newX - web.x);
-          spider.x = web.x + Math.cos(edgeAngle) * web.attackRadius * 0.95;
-          spider.y = web.y + Math.sin(edgeAngle) * web.attackRadius * 0.95;
-        }
-        spider.direction = dir;
-        spider.isMoving = true;
-
-        // Attack when close enough (use spider-to-mob distance)
-        const spiderToTarget = spider.distanceTo(target);
-        const attackRange = 25 + (target.radius || 20);
-        if (spiderToTarget < attackRange) {
-          spider.attackCooldown -= dt * 1000;
-          if (spider.attackCooldown <= 0) {
-            spider.attackCooldown += spider.attackInterval;
-            target.takeDamage(spider.damage * spider.damageMultiplier);
-          }
-        }
-      } else {
-        spider.isMoving = false;
-      }
-    }
-
-    // Turrets aim at closest mob + fire
-    this.deployables.filter((d): d is Turret => d.type === 'turret').forEach(turret => {
-      interface Target { x: number; y: number; hp: number; }
-      let closest: Target | null = null;
-      let closestDist = turret.attackRadius;
-      for (const mob of this.mobs) {
-        if (mob.hp <= 0) continue;
-        const d = turret.distanceTo(mob);
-        if (d <= closestDist) {
-          closestDist = d;
-          closest = mob;
-        }
-      }
-      turret.aimDirection = closest
-        ? Math.atan2(closest.y - turret.y, closest.x - turret.x)
-        : turret.direction;
-
-      turret.fireCooldown -= dt * 1000;
-      if (closest && turret.fireCooldown <= 0) {
-        turret.fireCooldown = turret.fireCdInterval;
-        this.bullets.push(new Bullet(turret.id, turret.x, turret.y, turret.aimDirection, Math.round(BasicTurretConfig.DAMAGE * turret.damageMultiplier)));
-      } else if (!closest) {
-        turret.fireCooldown = 0;
-      }
-    });
-
-    // Crossbows aim at closest mob + fire piercing arrows
-    this.deployables.filter((d): d is Crossbow => d.type === 'crossbow').forEach(crossbow => {
-      interface Target { x: number; y: number; hp: number; }
-      let closest: Target | null = null;
-      let closestDist = crossbow.attackRadius;
-      for (const mob of this.mobs) {
-        if (mob.hp <= 0) continue;
-        const d = crossbow.distanceTo(mob);
-        if (d <= closestDist) {
-          closestDist = d;
-          closest = mob;
-        }
-      }
-      crossbow.aimDirection = closest
-        ? Math.atan2(closest.y - crossbow.y, closest.x - crossbow.x)
-        : crossbow.direction;
-
-      crossbow.fireCooldown -= dt * 1000;
-      if (closest && crossbow.fireCooldown <= 0) {
-        crossbow.fireCooldown = crossbow.fireCdInterval;
-        this.arrows.push(new Arrow(
-          crossbow.id, crossbow.x, crossbow.y,
-          crossbow.aimDirection,
-          Math.round(CrossbowConfig.DAMAGE * crossbow.damageMultiplier),
-          CrossbowConfig.ARROW_MAX_TRAVEL,
-          CrossbowConfig.ARROW_SPEED,
-        ));
-      } else if (!closest) {
-        crossbow.fireCooldown = 0;
-      }
-    });
-
-    // Springers deploy caltrops on cooldown
-    this.deployables.filter((d): d is Springer => d.type === 'springer').forEach(springer => {
-      springer.caltropCooldown -= dt * 1000;
-      if (springer.caltropCooldown <= 0) {
-        springer.caltropCooldown += 3000;
-        const angle = Math.random() * 2 * Math.PI;
-        const dist = Math.random() * springer.attackRadius;
-        const cx = springer.x + Math.cos(angle) * dist;
-        const cy = springer.y + Math.sin(angle) * dist;
-        this.caltrops.push(new Caltrop(
-          `${springer.id}_caltrop_${Date.now()}`,
-          cx, cy,
-          Math.round(SpringerConfig.CALTROP_DAMAGE * springer.damageMultiplier),
-        ));
-      }
-    });
-
-    // Remove expired caltrops
     this.caltrops = this.caltrops.filter(c => !c.update(dt));
 
-    // Update arrows, remove expired
-    const arrowsToRemove: Arrow[] = [];
-    this.arrows.forEach(arrow => {
-      if (arrow.update(dt)) {
-        arrowsToRemove.push(arrow);
-      }
-    });
-
-    // Arrow vs mobs (piercing — arrow continues through)
-    for (const arrow of this.arrows) {
-      if (arrowsToRemove.includes(arrow)) continue;
-      for (const mob of this.mobs) {
-        if (mob.hp <= 0) continue;
-        if (arrow.hitMobIds.has(mob.id)) continue;
-        if (mob.distanceTo(arrow) <= (mob.radius || 20) + arrow.radius) {
-          arrow.hitMobIds.add(mob.id);
-          mob.takeDamage(arrow.damage);
-        }
-      }
-    }
-    this.arrows = this.arrows.filter(a => !arrowsToRemove.includes(a));
+    // Deployable behaviors
+    this.spiders = updateSpiders(dt, this.mobs, this.deployables, this.spiders);
+    updateTurrets(dt, this.mobs, this.deployables, this.bullets);
+    updateCrossbows(dt, this.mobs, this.deployables, this.arrows);
+    updateSpringers(dt, this.deployables, this.caltrops);
+    this.arrows = updateArrows(dt, this.mobs, this.arrows);
 
     // Apply collisions
     const { destroyedBullets, destroyedCaltrops } = applyCollisions(
