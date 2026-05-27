@@ -14,17 +14,7 @@ import ExpOrb from "./exp-orb";
 import { BasicTurretConfig, SpringerConfig } from "../shared/weapon-configs";
 import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
-
-function randomBoundaryPosition(): { x: number; y: number } {
-  const edge = Math.floor(Math.random() * 4);
-  const pos = Math.random() * Constants.MAP_SIZE;
-  switch (edge) {
-    case 0: return { x: pos, y: 0 };
-    case 1: return { x: Constants.MAP_SIZE, y: pos };
-    case 2: return { x: pos, y: Constants.MAP_SIZE };
-    default: return { x: 0, y: pos };
-  }
-}
+import { MobSpawner } from "./systems/mob-spawner";
 
 class Game {
   sockets: Record<string, import("socket.io").Socket>;
@@ -37,14 +27,7 @@ class Game {
   expOrbs: ExpOrb[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
-  lumberjackSpawnTimer: number;
-  lumberjackIdCounter: number;
-  chainsawerSpawnTimer: number;
-  chainsawerIdCounter: number;
-  loghouseSpawnTimer: number;
-  loghouseIdCounter: number;
-  foremanSpawnTimer: number;
-  foremanIdCounter: number;
+  mobSpawner: MobSpawner;
 
   constructor() {
     this.sockets = {};
@@ -57,14 +40,23 @@ class Game {
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
-    this.lumberjackSpawnTimer = 0;
-    this.lumberjackIdCounter = 0;
-    this.chainsawerSpawnTimer = 0;
-    this.chainsawerIdCounter = 0;
-    this.loghouseSpawnTimer = 0;
-    this.loghouseIdCounter = 0;
-    this.foremanSpawnTimer = 0;
-    this.foremanIdCounter = 0;
+    this.mobSpawner = new MobSpawner();
+    this.mobSpawner.register('lumberjack', LUMBERJACK_CONFIG.BASE_SPAWN_INTERVAL,
+      (id, x, y) => new Lumberjack(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
+    this.mobSpawner.register('chainsawer', CHAINSAWER_CONFIG.BASE_SPAWN_INTERVAL,
+      (id, x, y) => new Chainsawer(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
+    this.mobSpawner.register('foreman', FOREMAN_CONFIG.BASE_SPAWN_INTERVAL,
+      (id, x, y) => new Foreman(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
+    this.mobSpawner.register('loghouse', LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL,
+      (id, x, y) => new Loghouse(id, x, y, x, y),
+      () => {
+        const center = Constants.MAP_SIZE / 2;
+        const minDist = Constants.MAP_SIZE * 0.35;
+        const maxDist = Constants.MAP_SIZE * 0.45;
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = minDist + Math.random() * (maxDist - minDist);
+        return { x: center + Math.cos(angle) * dist, y: center + Math.sin(angle) * dist };
+      });
     setInterval(this.update.bind(this), 1000 / 60);
 
     this.trees.push(new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
@@ -109,56 +101,6 @@ class Game {
     if (player && player.pendingUpgrades > 0) {
       player.applyUpgrade(type);
     }
-  }
-
-  spawnLumberjack() {
-    const pos = randomBoundaryPosition();
-    this.lumberjackIdCounter++;
-    const lumberjack = new Lumberjack(
-      `lumberjack_${this.lumberjackIdCounter}`,
-      pos.x, pos.y,
-      Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
-    );
-    this.mobs.push(lumberjack);
-  }
-
-  spawnChainsawer() {
-    const pos = randomBoundaryPosition();
-    this.chainsawerIdCounter++;
-    const chainsawer = new Chainsawer(
-      `chainsawer_${this.chainsawerIdCounter}`,
-      pos.x, pos.y,
-      Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
-    );
-    this.mobs.push(chainsawer);
-  }
-
-  spawnLoghouse() {
-    // Place far from tree center
-    const center = Constants.MAP_SIZE / 2;
-    const minDist = Constants.MAP_SIZE * 0.35;
-    const maxDist = Constants.MAP_SIZE * 0.45;
-    const angle = Math.random() * 2 * Math.PI;
-    const dist = minDist + Math.random() * (maxDist - minDist);
-    this.loghouseIdCounter++;
-    const loghouse = new Loghouse(
-      `loghouse_${this.loghouseIdCounter}`,
-      center + Math.cos(angle) * dist,
-      center + Math.sin(angle) * dist,
-      center, center,
-    );
-    this.mobs.push(loghouse);
-  }
-
-  spawnForeman() {
-    const pos = randomBoundaryPosition();
-    this.foremanIdCounter++;
-    const foreman = new Foreman(
-      `foreman_${this.foremanIdCounter}`,
-      pos.x, pos.y,
-      Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
-    );
-    this.mobs.push(foreman);
   }
 
   private tryPlaceDeployable(
@@ -206,33 +148,8 @@ class Game {
     // Don't simulate when no players are connected
     if (Object.keys(this.sockets).length === 0) return;
 
-    // Spawn lumberjacks
-    this.lumberjackSpawnTimer += dt;
-    while (this.lumberjackSpawnTimer >= LUMBERJACK_CONFIG.BASE_SPAWN_INTERVAL) {
-      this.lumberjackSpawnTimer -= LUMBERJACK_CONFIG.BASE_SPAWN_INTERVAL;
-      this.spawnLumberjack();
-    }
-
-    // Spawn chainsawers
-    this.chainsawerSpawnTimer += dt;
-    while (this.chainsawerSpawnTimer >= CHAINSAWER_CONFIG.BASE_SPAWN_INTERVAL) {
-      this.chainsawerSpawnTimer -= CHAINSAWER_CONFIG.BASE_SPAWN_INTERVAL;
-      this.spawnChainsawer();
-    }
-
-    // Spawn loghouses
-    this.loghouseSpawnTimer += dt;
-    while (this.loghouseSpawnTimer >= LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL) {
-      this.loghouseSpawnTimer -= LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL;
-      this.spawnLoghouse();
-    }
-
-    // Spawn foremen
-    this.foremanSpawnTimer += dt;
-    while (this.foremanSpawnTimer >= FOREMAN_CONFIG.BASE_SPAWN_INTERVAL) {
-      this.foremanSpawnTimer -= FOREMAN_CONFIG.BASE_SPAWN_INTERVAL;
-      this.spawnForeman();
-    }
+    // Spawn mobs
+    this.mobSpawner.update(dt, this.mobs);
 
     // Update bullets
     const bulletsToRemove: Bullet[] = [];
@@ -435,14 +352,7 @@ class Game {
     this.deployables = [];
     this.caltrops = [];
     this.expOrbs = [];
-    this.lumberjackSpawnTimer = 0;
-    this.lumberjackIdCounter = 0;
-    this.chainsawerSpawnTimer = 0;
-    this.chainsawerIdCounter = 0;
-    this.loghouseSpawnTimer = 0;
-    this.loghouseIdCounter = 0;
-    this.foremanSpawnTimer = 0;
-    this.foremanIdCounter = 0;
+    this.mobSpawner.reset();
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
   }
