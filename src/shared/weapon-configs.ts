@@ -34,22 +34,32 @@ export const SpringerConfig = {
 };
 
 export const SpiderwebConfig = {
-  COOLDOWN: 8000,
-  DURATION: 30000,
-  RADIUS: 20,
-  ID_PREFIX: "spiderweb",
-  ATTACK_RADIUS: 200,
-  SLOW_MULTIPLIER: 0.4,
-  SPIDER_DAMAGE: 25,
-  SPIDER_ATTACK_INTERVAL: 1500,
-  SPIDER_SPEED: 100,
+    COOLDOWN: 8000,
+    DURATION: 30000,
+    RADIUS: 20,
+    ID_PREFIX: 'spiderweb',
+    ATTACK_RADIUS: 200,
+    SLOW_MULTIPLIER: 0.4,
+    SPIDER_DAMAGE: 25,
+    SPIDER_ATTACK_INTERVAL: 1500,
+    SPIDER_SPEED: 100,
 };
 
-export const WEAPON_ENTRIES: {
-  type: string;
-  config: BaseWeaponConfig;
-}[] = [
-  { type: "turret", config: BasicTurretConfig },
-  { type: "springer", config: SpringerConfig },
-  { type: "spiderweb", config: SpiderwebConfig },
+export const CrossbowConfig = {
+    COOLDOWN: 6000,
+    DURATION: 40000,
+    RADIUS: 20,
+    ID_PREFIX: 'crossbow',
+    ATTACK_RADIUS: 250,
+    FIRE_COOLDOWN: 4000,
+    DAMAGE: 100,
+    ARROW_SPEED: 600,
+    ARROW_MAX_TRAVEL: 350,
+};
+
+export const WEAPON_ENTRIES: { type: string; config: { COOLDOWN: number; DURATION: number; RADIUS: number; ID_PREFIX: string } }[] = [
+    { type: 'turret', config: BasicTurretConfig },
+    { type: 'springer', config: SpringerConfig },
+    { type: 'spiderweb', config: SpiderwebConfig },
+    { type: 'crossbow', config: CrossbowConfig },
 ];

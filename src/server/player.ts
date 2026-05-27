@@ -4,7 +4,7 @@ import { WEAPON_ENTRIES } from '../shared/weapon-configs';
 
 const EXP_BASE_THRESHOLD = 100;
 
-type WeaponType = 'turret' | 'springer' | 'spiderweb';
+type WeaponType = 'turret' | 'springer' | 'spiderweb' | 'crossbow';
 
 interface WeaponState {
   type: WeaponType;

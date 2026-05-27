@@ -11,10 +11,12 @@ import Harvester from "./mobs/harvester";
 import Turret from "./weapons/turret";
 import Springer from "./weapons/springer";
 import Spiderweb from "./weapons/spiderweb";
+import Crossbow from "./weapons/crossbow";
+import Arrow from "./weapons/arrow";
 import Spider from "./weapons/spider";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
-import { BasicTurretConfig, SpringerConfig, SpiderwebConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
+import { BasicTurretConfig, SpringerConfig, SpiderwebConfig, CrossbowConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
 import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG, HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 import { MobSpawner } from "./systems/mob-spawner";
@@ -25,13 +27,14 @@ class Game {
   trees: Tree[];
   bullets: Bullet[];
   mobs: Mob[];
-  deployables: (Turret | Springer | Spiderweb)[];
+  deployables: (Turret | Springer | Spiderweb | Crossbow)[];
   caltrops: Caltrop[];
   expOrbs: ExpOrb[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
   mobSpawner: MobSpawner;
   spiders: Spider[];
+  arrows: Arrow[];
 
   constructor() {
     this.sockets = {};
@@ -42,6 +45,7 @@ class Game {
     this.deployables = [];
     this.caltrops = [];
     this.spiders = [];
+    this.arrows = [];
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
@@ -147,11 +151,12 @@ class Game {
     setCd(cooldown);
   }
 
-  private createDeployable(type: string, id: string, x: number, y: number, dir: number): Turret | Springer | Spiderweb {
+  private createDeployable(type: string, id: string, x: number, y: number, dir: number): Turret | Springer | Spiderweb | Crossbow {
     switch (type) {
       case 'turret': return new Turret(id, x, y, dir, BasicTurretConfig);
       case 'springer': return new Springer(id, x, y);
       case 'spiderweb': return new Spiderweb(id, x, y);
+      case 'crossbow': return new Crossbow(id, x, y, dir);
       default: throw new Error(`Unknown deployable type: ${type}`);
     }
   }
@@ -350,6 +355,38 @@ class Game {
       }
     });
 
+    // Crossbows aim at closest mob + fire piercing arrows
+    this.deployables.filter((d): d is Crossbow => d.type === 'crossbow').forEach(crossbow => {
+      interface Target { x: number; y: number; hp: number; }
+      let closest: Target | null = null;
+      let closestDist = crossbow.attackRadius;
+      for (const mob of this.mobs) {
+        if (mob.hp <= 0) continue;
+        const d = crossbow.distanceTo(mob);
+        if (d <= closestDist) {
+          closestDist = d;
+          closest = mob;
+        }
+      }
+      crossbow.aimDirection = closest
+        ? Math.atan2(closest.y - crossbow.y, closest.x - crossbow.x)
+        : crossbow.direction;
+
+      crossbow.fireCooldown -= dt * 1000;
+      if (closest && crossbow.fireCooldown <= 0) {
+        crossbow.fireCooldown = crossbow.fireCdInterval;
+        this.arrows.push(new Arrow(
+          crossbow.id, crossbow.x, crossbow.y,
+          crossbow.aimDirection,
+          Math.round(CrossbowConfig.DAMAGE * crossbow.damageMultiplier),
+          CrossbowConfig.ARROW_MAX_TRAVEL,
+          CrossbowConfig.ARROW_SPEED,
+        ));
+      } else if (!closest) {
+        crossbow.fireCooldown = 0;
+      }
+    });
+
     // Springers deploy caltrops on cooldown
     this.deployables.filter((d): d is Springer => d.type === 'springer').forEach(springer => {
       springer.caltropCooldown -= dt * 1000;
@@ -369,6 +406,28 @@ class Game {
 
     // Remove expired caltrops
     this.caltrops = this.caltrops.filter(c => !c.update(dt));
+
+    // Update arrows, remove expired
+    const arrowsToRemove: Arrow[] = [];
+    this.arrows.forEach(arrow => {
+      if (arrow.update(dt)) {
+        arrowsToRemove.push(arrow);
+      }
+    });
+
+    // Arrow vs mobs (piercing — arrow continues through)
+    for (const arrow of this.arrows) {
+      if (arrowsToRemove.includes(arrow)) continue;
+      for (const mob of this.mobs) {
+        if (mob.hp <= 0) continue;
+        if (arrow.hitMobIds.has(mob.id)) continue;
+        if (mob.distanceTo(arrow) <= (mob.radius || 20) + arrow.radius) {
+          arrow.hitMobIds.add(mob.id);
+          mob.takeDamage(arrow.damage);
+        }
+      }
+    }
+    this.arrows = this.arrows.filter(a => !arrowsToRemove.includes(a));
 
     // Apply collisions
     const { destroyedBullets, destroyedCaltrops } = applyCollisions(
@@ -450,6 +509,7 @@ class Game {
     this.deployables = [];
     this.caltrops = [];
     this.spiders = [];
+    this.arrows = [];
     this.expOrbs = [];
     this.mobSpawner.reset();
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
@@ -489,6 +549,7 @@ class Game {
       deployables: nearbyDeployables.map((d) => d.serializeForUpdate()),
       caltrops: nearbyCaltrops.map((c) => c.serializeForUpdate()),
       spiders: this.spiders.map((s) => s.serializeForUpdate()),
+      arrows: this.arrows.map((a) => a.serializeForUpdate()),
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
     };
   }

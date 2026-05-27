@@ -13,6 +13,8 @@ const ASSET_NAMES = [
   'weapons/turret-head.png',
   'weapons/springer.png',
   'weapons/spider.png',
+  'weapons/crossbow.png',
+  'weapons/arrow.png',
   'areas/spiderweb.png',
 ];
 

@@ -1,12 +1,13 @@
 import { getAsset } from '../assets';
 import { DARK_GRAY, BLUE_ACCENT, WEAPON_RING } from '../colors';
 import { context, worldToScreen, RenderObject } from './common';
-import { BasicTurretConfig, SpringerConfig, SpiderwebConfig } from '../../shared/weapon-configs';
+import { BasicTurretConfig, SpringerConfig, SpiderwebConfig, CrossbowConfig } from '../../shared/weapon-configs';
 
 const WEAPON_RADII: Record<string, number> = {
   turret: BasicTurretConfig.ATTACK_RADIUS,
   springer: SpringerConfig.ATTACK_RADIUS,
   spiderweb: SpiderwebConfig.ATTACK_RADIUS,
+  crossbow: CrossbowConfig.ATTACK_RADIUS,
 };
 
 export function renderDeployable(me: RenderObject, obj: RenderObject) {
@@ -68,6 +69,15 @@ export function renderDeployable(me: RenderObject, obj: RenderObject) {
     context.restore();
   } else if (type === 'spiderweb') {
     // No center sprite — only the radius overlay above
+  } else if (type === 'crossbow') {
+    context.save();
+    context.translate(canvasX, canvasY);
+    context.rotate(aimDirection || 0);
+    context.drawImage(
+      getAsset('weapons/crossbow.png'),
+      -r, -r, r * 2, r * 2,
+    );
+    context.restore();
   }
 
   // Duration bar

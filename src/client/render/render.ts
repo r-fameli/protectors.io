@@ -9,6 +9,7 @@ import { renderMob } from './mob';
 import { renderDeployable } from './deployable';
 import { renderCaltrop } from './caltrop';
 import { renderSpider } from './spider';
+import { renderArrow } from './arrow';
 import { renderTree, renderTreeHP } from './tree';
 import { renderBullet } from './bullet';
 import { renderExpOrb } from './exp-orb';
@@ -58,7 +59,7 @@ function renderHitbox(me: RenderObject, object: RenderObject) {
 function render() {
   input.update();
 
-  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, expOrbs } = getCurrentState();
+  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs } = getCurrentState();
   if (me) {
     // Show upgrade panel when upgrades are pending
     const panel = document.getElementById('upgrade-panel');
@@ -103,6 +104,7 @@ function render() {
     forEachNearby(me, deployables, renderDeployable);
     forEachNearby(me, caltrops, renderCaltrop);
     forEachNearby(me, spiders, renderSpider);
+    forEachNearby(me, arrows, renderArrow);
     forEachNearby(me, bullets, renderBullet);
 
     renderPlayer(me, me);
