@@ -29,3 +29,20 @@ export const LOGHOUSE: MobConfig = {
     BASE_SPAWN_INTERVAL: 30,
     XP_DROP: 100,
 };
+
+export const FOREMAN: MobConfig & {
+    BUFF_RADIUS: number;
+    BUFF_DURATION: number;
+    BUFF_INTERVAL: number;
+    BUFF_SPEED_MULTIPLIER: number;
+} = {
+    BASE_HEALTH: 100,
+    BASE_SPEED: 50,
+    BASE_RADIUS: 20,
+    BASE_SPAWN_INTERVAL: 15,
+    XP_DROP: 10,
+    BUFF_RADIUS: 200,
+    BUFF_DURATION: 4,
+    BUFF_INTERVAL: 5,
+    BUFF_SPEED_MULTIPLIER: 1.5,
+};

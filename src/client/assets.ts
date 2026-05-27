@@ -3,6 +3,7 @@ const ASSET_NAMES = [
   'mobs/lumberjack.png',
   'mobs/chainsawer.png',
   'mobs/loghouse.png',
+  'mobs/foreman.png',
   'objects/tree.png',
   'objects/exp.png',
   'projectiles/bullet.svg',

@@ -6,12 +6,13 @@ import Mob from "./mobs/mob";
 import Lumberjack from "./mobs/lumberjack";
 import Chainsawer from "./mobs/chainsawer";
 import Loghouse from "./mobs/loghouse";
+import Foreman from "./mobs/foreman";
 import Turret from "./weapons/turret";
 import Springer from "./weapons/springer";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
 import { BasicTurretConfig, SpringerConfig } from "../shared/weapon-configs";
-import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG } from "../shared/mob-configs";
+import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG } from "../shared/mob-configs";
 import applyCollisions from "./collisions";
 
 function randomBoundaryPosition(): { x: number; y: number } {
@@ -42,6 +43,8 @@ class Game {
   chainsawerIdCounter: number;
   loghouseSpawnTimer: number;
   loghouseIdCounter: number;
+  foremanSpawnTimer: number;
+  foremanIdCounter: number;
 
   constructor() {
     this.sockets = {};
@@ -60,6 +63,8 @@ class Game {
     this.chainsawerIdCounter = 0;
     this.loghouseSpawnTimer = 0;
     this.loghouseIdCounter = 0;
+    this.foremanSpawnTimer = 0;
+    this.foremanIdCounter = 0;
     setInterval(this.update.bind(this), 1000 / 60);
 
     this.trees.push(new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
@@ -145,6 +150,17 @@ class Game {
     this.mobs.push(loghouse);
   }
 
+  spawnForeman() {
+    const pos = randomBoundaryPosition();
+    this.foremanIdCounter++;
+    const foreman = new Foreman(
+      `foreman_${this.foremanIdCounter}`,
+      pos.x, pos.y,
+      Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
+    );
+    this.mobs.push(foreman);
+  }
+
   private tryPlaceDeployable(
     dt: number,
     player: Player,
@@ -209,6 +225,13 @@ class Game {
     while (this.loghouseSpawnTimer >= LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL) {
       this.loghouseSpawnTimer -= LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL;
       this.spawnLoghouse();
+    }
+
+    // Spawn foremen
+    this.foremanSpawnTimer += dt;
+    while (this.foremanSpawnTimer >= FOREMAN_CONFIG.BASE_SPAWN_INTERVAL) {
+      this.foremanSpawnTimer -= FOREMAN_CONFIG.BASE_SPAWN_INTERVAL;
+      this.spawnForeman();
     }
 
     // Update bullets
@@ -276,6 +299,11 @@ class Game {
           this.mobs.push(lumberjack);
         }
       }
+    });
+
+    // Foremen move toward mob clusters + apply buffs
+    this.mobs.filter(m => m.mobType === 'foreman' && m.hp > 0).forEach(foreman => {
+      (foreman as Foreman).updateBehavior(dt, this.mobs);
     });
 
     // Remove expired deployables
@@ -413,6 +441,8 @@ class Game {
     this.chainsawerIdCounter = 0;
     this.loghouseSpawnTimer = 0;
     this.loghouseIdCounter = 0;
+    this.foremanSpawnTimer = 0;
+    this.foremanIdCounter = 0;
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
   }

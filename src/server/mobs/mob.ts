@@ -10,6 +10,8 @@ class Mob extends GameObject {
   radius: number;
   mobType: string;
   xpDrop: number;
+  buffTimer: number = 0;
+  speedMultiplier: number = 1;
 
   constructor(id: string, x: number, y: number, targetX: number, targetY: number, config: MobConfig, mobType: string) {
     super(id, x, y, 0, config.BASE_SPEED);
@@ -23,6 +25,15 @@ class Mob extends GameObject {
   }
 
   update(dt: number): boolean {
+    // Tick buff timer, revert speed on expiry
+    if (this.buffTimer > 0) {
+      this.buffTimer -= dt;
+      if (this.buffTimer <= 0) {
+        this.buffTimer = 0;
+        this.speedMultiplier = 1;
+      }
+    }
+
     this.direction = Math.atan2(this.targetY - this.y, this.targetX - this.x);
     const dx = this.x - this.targetX;
     const dy = this.y - this.targetY;
@@ -31,7 +42,8 @@ class Mob extends GameObject {
 
     if (dist > stopDist) {
       this.isMoving = true;
-      super.update(dt);
+      this.x += dt * this.speed * this.speedMultiplier * Math.cos(this.direction);
+      this.y += dt * this.speed * this.speedMultiplier * Math.sin(this.direction);
     } else {
       this.isMoving = false;
     }
@@ -43,6 +55,12 @@ class Mob extends GameObject {
     this.hp -= amount;
   }
 
+  /** Apply a temporary speed buff. Overwrites any existing buff. */
+  applyBuff(duration: number, multiplier: number) {
+    this.buffTimer = duration;
+    this.speedMultiplier = multiplier;
+  }
+
   serializeForUpdate() {
     return {
       ...super.serializeForUpdate(),
@@ -51,6 +69,7 @@ class Mob extends GameObject {
       maxHp: this.maxHp,
       radius: this.radius,
       mobType: this.mobType,
+      buffed: this.buffTimer > 0,
     };
   }
 }

@@ -19,6 +19,8 @@ export interface RenderObject {
   aimDirection?: number;
   mobType?: string;
   type?: string;
+  buffed?: boolean;
+  buffRingActive?: boolean;
 }
 
 /** Convert world coords to canvas coords relative to the local player. */
