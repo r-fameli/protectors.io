@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc && webpack --config webpack.prod.js",
     "dev": "nodemon",
-    "start": "tsc && cross-env NODE_ENV=production node dist/server/server.js",
+    "start": "cross-env NODE_ENV=production node dist/server/server.js",
     "test": "jest"
   },
   "author": "Riki Fameli",
