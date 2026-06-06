@@ -30,6 +30,8 @@ io.on('connection', socket => {
 
   socket.on(Constants.MSG_TYPES.JOIN_GAME, (username: string) => {
     game.addPlayer(socket, username);
+    const joinMsg = { username: 'System', text: `${username} joined` };
+    Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, joinMsg));
   });
 
   socket.on(Constants.MSG_TYPES.INPUT, (data: { direction?: number; isMoving?: boolean }) => {
@@ -40,8 +42,20 @@ io.on('connection', socket => {
     game.handleUpgrade(socket, upgradeKey);
   });
 
+  socket.on(Constants.MSG_TYPES.CHAT, (text: string) => {
+    const player = game.players[socket.id];
+    if (player && text.trim()) {
+      const payload = { username: player.username, text: text.trim().slice(0, 200) };
+      Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, payload));
+    }
+  });
+
   socket.on('disconnect', () => {
-    console.log('Player disconnected');
+    const player = game.players[socket.id];
+    const name = player ? player.username : 'Unknown';
+    console.log('Player disconnected', name);
     game.removePlayer(socket);
+    const leaveMsg = { username: 'System', text: `${name} left` };
+    Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, leaveMsg));
   });
 });

@@ -63,6 +63,7 @@ export interface UpgradeChoice {
 
 export interface PlayerState {
   id: string;
+  username: string;
   x: number;
   y: number;
   direction: number;
@@ -128,13 +129,30 @@ interface GameState {
   threatProgress?: number;
 }
 
+export interface ChatMessage {
+  username: string;
+  text: string;
+}
+
 const gameUpdates: ServerUpdate[] = [];
 let gameStart = 0;
 let firstServerTimestamp = 0;
+const chatMessages: ChatMessage[] = [];
+const MAX_CHAT = 50;
 
 export function initState() {
   gameStart = 0;
   firstServerTimestamp = 0;
+  chatMessages.length = 0;
+}
+
+export function pushChatMessage(msg: ChatMessage) {
+  chatMessages.push(msg);
+  if (chatMessages.length > MAX_CHAT) chatMessages.shift();
+}
+
+export function getChatMessages(): ChatMessage[] {
+  return chatMessages;
 }
 
 export function processGameUpdate(update: ServerUpdate) {
@@ -220,7 +238,7 @@ function interpolateObject<T>(object1: T, object2: T | undefined, ratio: number)
       interpolated[key] = interpolateDirection((object1 as Record<string, number>)[key], (object2 as Record<string, number>)[key], ratio);
     }
     // FIXME: Is this case needed?
-    else if (key === 'weapons' || key === 'availableUpgrades') {
+    else if (key === 'weapons' || key === 'availableUpgrades' || key === 'username') {
       interpolated[key] = (object2 as Record<string, unknown>)[key] || (object1 as Record<string, unknown>)[key];
     } else {
       interpolated[key] = (object1 as Record<string, number>)[key] + ((object2 as Record<string, number>)[key] - (object1 as Record<string, number>)[key]) * ratio;

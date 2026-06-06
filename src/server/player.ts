@@ -231,6 +231,7 @@ class Player extends GameObject {
   serializeForUpdate() {
     return {
       ...super.serializeForUpdate(),
+      username: this.username,
       direction: this.direction,
       hp: this.hp,
       weapons: this.getWeapons(),

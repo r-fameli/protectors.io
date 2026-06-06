@@ -26,7 +26,7 @@ export function renderTree(me: RenderObject, tree: RenderObject) {
 export function renderTreeHP(me: RenderObject, tree: RenderObject) {
   // Draw HP bar at top-center of screen for the tree
   const barWidth = 200;
-  const barHeight = 16;
+  const barHeight = 20;
   const barX = (canvas.width - barWidth) / 2;
   const barY = 10;
 
@@ -42,7 +42,7 @@ export function renderTreeHP(me: RenderObject, tree: RenderObject) {
 
   // Text
   context.fillStyle = WHITE;
-  context.font = 'bold 12px monospace';
+  context.font = 'bold 13px monospace';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillText(`Tree ${Math.ceil(tree.hp || 0)}/${tree.maxHp}`, canvas.width / 2, barY + barHeight / 2);

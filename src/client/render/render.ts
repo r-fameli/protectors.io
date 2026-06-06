@@ -1,5 +1,5 @@
 import { debounce } from 'throttle-debounce';
-import { getCurrentState } from '../state';
+import { getCurrentState, getChatMessages } from '../state';
 import input from '../input';
 
 import { canvas, context, MAP_SIZE, RenderObject, isNear, forEachNearby } from './common';
@@ -107,12 +107,14 @@ function render() {
 
     renderMinimap(me, others!, trees!, mobs || [], deployables || []);
     renderWeaponCooldowns(me);
-    renderExpBar(me);
     renderDifficultyBar(threatLevel, threatProgress);
     if (trees && trees.length > 0) {
       renderTreeHP(me, trees[0]);
     }
+    renderExpBar(me);
   }
+
+  renderChatMessages();
 
   animationFrameRequestId = requestAnimationFrame(render);
 }
@@ -128,6 +130,62 @@ function renderMainMenu() {
   animationFrameRequestId = requestAnimationFrame(renderMainMenu);
 }
 
+let lastChatCount = 0;
+
+const FADE_DELAY = 8;   // seconds before fade starts
+const FADE_DURATION = 12; // seconds to go from opaque to transparent
+
+/** Append new chat DOM elements + update opacity every frame. */
+function renderChatMessages() {
+  const msgs = getChatMessages();
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+
+  // Append new messages
+  if (msgs.length !== lastChatCount) {
+    lastChatCount = msgs.length;
+    while (container.children.length < msgs.length) {
+      const msg = msgs[container.children.length];
+      const div = document.createElement('div');
+      div.className = 'chat-msg';
+      div.dataset.timestamp = String(Date.now());
+      if (msg.username === 'System') {
+        div.classList.add('chat-system');
+        div.textContent = msg.text;
+      } else {
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'chat-name';
+        nameSpan.textContent = msg.username + ': ';
+        div.appendChild(nameSpan);
+        div.appendChild(document.createTextNode(msg.text));
+      }
+      container.appendChild(div);
+    }
+    // Trim excess
+    while (container.children.length > msgs.length) {
+      container.removeChild(container.firstChild!);
+    }
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Opacity fade — skip when chat input is open
+  const chatInput = document.getElementById('chat-input');
+  const isChatOpen = chatInput && !chatInput.classList.contains('hidden');
+  const now = Date.now();
+
+  for (const el of container.children) {
+    const ts = (el as HTMLElement).dataset.timestamp;
+    if (!ts) continue;
+    const age = (now - Number(ts)) / 1000;
+    if (isChatOpen || age < FADE_DELAY) {
+      (el as HTMLElement).style.opacity = '1';
+    } else {
+      const fade = Math.max(0.2, 1 - (age - FADE_DELAY) / FADE_DURATION);
+      (el as HTMLElement).style.opacity = String(fade);
+    }
+  }
+}
+
 // ── Boot ───────────────────────────────────────────────────
 
 animationFrameRequestId = requestAnimationFrame(renderMainMenu);
@@ -136,6 +194,10 @@ animationFrameRequestId = requestAnimationFrame(renderMainMenu);
 
 export function startRendering() {
   cancelAnimationFrame(animationFrameRequestId);
+  lastChatCount = 0;
+  // Clear old chat DOM so messages from previous game don't persist
+  const chatContainer = document.getElementById('chat-messages');
+  if (chatContainer) chatContainer.innerHTML = '';
   animationFrameRequestId = requestAnimationFrame(render);
 }
 

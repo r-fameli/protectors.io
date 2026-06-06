@@ -1,6 +1,6 @@
 import { getCurrentState } from "./state";
 import { toggleHitboxes, areHitboxesVisible } from "./render/render";
-import { updateDirection } from "./networking";
+import { updateDirection, sendChat } from "./networking";
 
 import Constants from "../shared/constants";
 
@@ -10,16 +10,47 @@ let direction = 0;
 let lastServerUpdate = Date.now();
 const keys: Record<string, boolean> = {};
 let isMoving = false;
+let chatOpen = false;
 
 function onKeyDown(e: KeyboardEvent) {
+  // Toggle chat on Enter
+  if (e.key === "Enter" && !chatOpen) {
+    chatOpen = true;
+    e.preventDefault();
+    const input = document.getElementById("chat-input") as HTMLInputElement;
+    if (input) {
+      input.classList.remove("hidden");
+      input.focus();
+    }
+    return;
+  }
+
+  // If chat is open, only handle Escape
+  if (chatOpen) {
+    if (e.key === "Escape") {
+      chatOpen = false;
+      e.preventDefault();
+      const input = document.getElementById("chat-input") as HTMLInputElement;
+      if (input) {
+        input.classList.add("hidden");
+        input.value = "";
+        input.blur();
+      }
+    }
+    return;
+  }
+
   keys[e.key] = true;
 }
 
 function onKeyUp(e: KeyboardEvent) {
+  if (chatOpen) return;
   keys[e.key] = false;
 }
 
 function update() {
+  if (chatOpen) return;
+
   const state = getCurrentState();
   if (!state.me) return;
 
@@ -77,16 +108,42 @@ function reset() {
   targetPosition = { x: 0, y: 0 };
   direction = 0;
   lastServerUpdate = Date.now();
+  chatOpen = false;
+}
+
+// Wire up chat input send on Enter
+function onChatKeyDown(e: KeyboardEvent) {
+  if (e.key === "Enter") {
+    const input = e.target as HTMLInputElement;
+    const text = input.value.trim();
+    if (text) {
+      sendChat(text);
+    }
+    input.value = "";
+    input.classList.add("hidden");
+    input.blur();
+    chatOpen = false;
+    e.preventDefault();
+    e.stopPropagation(); // prevent window handler from re-opening chat
+  }
 }
 
 export function startCapturingInput() {
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keyup", onKeyUp);
+  // Defer to next microtask so any in-flight Enter from the start
+  // screen finishes propagation before we start listening.
+  setTimeout(() => {
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    const chatInput = document.getElementById("chat-input");
+    if (chatInput) chatInput.addEventListener("keydown", onChatKeyDown);
+  }, 0);
 }
 
 export function stopCapturingInput() {
   window.removeEventListener("keydown", onKeyDown);
   window.removeEventListener("keyup", onKeyUp);
+  const chatInput = document.getElementById("chat-input");
+  if (chatInput) chatInput.removeEventListener("keydown", onChatKeyDown);
 }
 
 export default {

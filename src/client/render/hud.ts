@@ -9,9 +9,6 @@ const BOX_SIZE = 64;
 const PADDING = 10;
 const IMAGE_SIZE = 40;
 
-const EXP_BAR_HEIGHT = 20;
-const EXP_BAR_BOTTOM = 10;
-
 const WEAPON_SPRITES: Record<WeaponType, string> = {
   turret: 'weapons/turret-base.png',
   springer: 'weapons/springer.png',
@@ -44,28 +41,30 @@ export function renderWeaponCooldowns(me: PlayerState) {
   });
 }
 
+/** Player level + XP bar, positioned below the tree HP bar at top-center. */
 export function renderExpBar(me: PlayerState) {
-  const barX = PADDING;
-  const barY = canvas.height - EXP_BAR_HEIGHT - EXP_BAR_BOTTOM;
-  const barWidth = Math.floor(canvas.width / 4);
+  const barWidth = 200;
+  const barHeight = 16;
+  const barX = (canvas.width - barWidth) / 2;
+  const barY = 10 + 20 + 6; // below tree HP bar (tree barY=10, tree height=20, +6 gap)
 
   // Background
   context.fillStyle = HUD_BG;
-  context.fillRect(barX, barY, barWidth, EXP_BAR_HEIGHT);
+  context.fillRect(barX, barY, barWidth, barHeight);
 
-  // Fill
+  // XP fill
   const ratio = Math.min(1, me.exp / me.nextLevelExp);
   if (ratio > 0) {
     context.fillStyle = BLUE_ACCENT;
-    context.fillRect(barX, barY, barWidth * ratio, EXP_BAR_HEIGHT);
+    context.fillRect(barX, barY, barWidth * ratio, barHeight);
   }
 
   // Level text
   context.fillStyle = WHITE;
-  context.font = 'bold 14px monospace';
-  context.textAlign = 'left';
+  context.font = 'bold 12px monospace';
+  context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.fillText(`Lvl ${me.level}`, barX + 6, barY + EXP_BAR_HEIGHT / 2);
+  context.fillText(`Player Lvl. ${me.level}`, barX + barWidth / 2, barY + barHeight / 2);
 }
 
 const DIFF_BAR_WIDTH = 160;

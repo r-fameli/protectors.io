@@ -16,6 +16,7 @@ interface ConstantsType {
     INPUT: string;
     GAME_OVER: string;
     CHOOSE_UPGRADE: string;
+    CHAT: string;
   };
 }
 
@@ -37,6 +38,7 @@ const Constants: ConstantsType = Object.freeze({
     INPUT: 'input',
     GAME_OVER: 'dead',
     CHOOSE_UPGRADE: 'choose_upgrade',
+    CHAT: 'chat',
   },
 });
 

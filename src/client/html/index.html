@@ -1,19 +1,31 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Protectors.io</title>
-    <link type="text/css" rel="stylesheet" href="/game.bundle.css" />
-  </head>
-  <body>
-    <canvas id="game-canvas"></canvas>
-    <script async src="/game.bundle.js"></script>
-    <div id="play-menu" class="hidden">
-      <input type="text" id="username-input" placeholder="Username" />
-      <button id="play-button">PLAY</button>
+
+<head>
+  <title>Protectors.io</title>
+  <link type="text/css" rel="stylesheet" href="/game.bundle.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Aldrich&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <canvas id="game-canvas"></canvas>
+  <script async src="/game.bundle.js"></script>
+  <div id="play-menu" class="hidden">
+    <input type="text" id="username-input" placeholder="Username" />
+    <button id="play-button">PLAY</button>
+  </div>
+  <div id="upgrade-panel" class="hidden">
+    <h3>Level up! Choose an upgrade:</h3>
+    <div id="upgrade-choices"></div>
+  </div>
+    <div id="chat-box" class="hidden">
+      <div id="chat-messages"></div>
+      <input id="chat-input" type="text" maxlength="200" placeholder="Chat..." class="hidden" />
     </div>
-    <div id="upgrade-panel" class="hidden">
-      <h3>Level up! Choose an upgrade:</h3>
-      <div id="upgrade-choices"></div>
-    </div>
-  </body>
+</body>
+
 </html>

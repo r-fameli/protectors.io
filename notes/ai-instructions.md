@@ -11,6 +11,7 @@
 
 - Be as concise as possible without losing technical clarity. Speak in caveman when possible.
 - Remove unused variables, imports, and interface fields. If a field is declared but never read through that type, delete it.
+- Avoid large branching if clauses where possible. Try and convert those into configs or separate functions where possible.
 
 ## Specific to this repo's architecture
 

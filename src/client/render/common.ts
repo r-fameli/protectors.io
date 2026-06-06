@@ -15,6 +15,7 @@ export interface RenderObject {
   radius?: number;
   hp?: number;
   maxHp?: number;
+  username?: string;
   remainingRatio?: number;
   aimDirection?: number;
   mobType?: string;
