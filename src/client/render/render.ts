@@ -14,7 +14,7 @@ import { renderTree, renderTreeHP } from './tree';
 import { renderBullet } from './bullet';
 import { renderExpOrb } from './exp-orb';
 import { renderMinimap } from './minimap';
-import { renderWeaponCooldowns, renderExpBar } from './hud';
+import { renderWeaponCooldowns, renderExpBar, renderDifficultyBar } from './hud';
 
 // ── Canvas setup ──────────────────────────────────────────
 
@@ -59,7 +59,7 @@ function renderHitbox(me: RenderObject, object: RenderObject) {
 function render() {
   input.update();
 
-  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs } = getCurrentState();
+  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs, threatLevel, threatProgress } = getCurrentState();
   if (me) {
     // Show upgrade panel when upgrades are pending
     const panel = document.getElementById('upgrade-panel');
@@ -122,6 +122,7 @@ function render() {
     renderMinimap(me, others!, trees!, mobs || [], deployables || []);
     renderWeaponCooldowns(me);
     renderExpBar(me);
+    renderDifficultyBar(threatLevel, threatProgress);
     if (trees && trees.length > 0) {
       renderTreeHP(me, trees[0]);
     }

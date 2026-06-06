@@ -1,7 +1,8 @@
 import { getAsset } from '../assets';
 import { canvas, context } from './common';
 import { PlayerState, WeaponState, WeaponType } from '../state';
-import { HUD_BG, COOLDOWN_TINT, BLUE_ACCENT, WHITE } from '../colors';
+import { HUD_BG, COOLDOWN_TINT, BLUE_ACCENT, WHITE, DARK_GRAY } from '../colors';
+import { DIFFICULTY_LABELS } from '../../shared/wave-configs';
 
 const BOX_SIZE = 64;
 const PADDING = 10;
@@ -64,4 +65,66 @@ export function renderExpBar(me: PlayerState) {
   context.textAlign = 'left';
   context.textBaseline = 'middle';
   context.fillText(`Lvl ${me.level}`, barX + 6, barY + EXP_BAR_HEIGHT / 2);
+}
+
+const DIFF_BAR_WIDTH = 160;
+const DIFF_BAR_HEIGHT = 22;
+
+/**
+ * Render Risk of Rain-style difficulty bar in top-right corner.
+ * Bar fills from left to right as threat level rises.
+ * Labels: Easy → Medium → Hard → Very Hard → Insane.
+ * At threat 6+ bar stays full red with "Insane" label.
+ */
+export function renderDifficultyBar(threatLevel: number | undefined, threatProgress: number | undefined) {
+  const tl = threatLevel || 1;
+  const tp = threatProgress || 0;
+  // Continuous fill: full level + current XP progress toward next level, capped at 6
+  const fill = Math.min(1, ((tl - 1) + tp) / 6);
+  const barX = canvas.width - DIFF_BAR_WIDTH - PADDING;
+  const labelY = PADDING;
+  const barY = PADDING + 16;
+
+  // "Threat Level" label above bar
+  context.fillStyle = WHITE;
+  context.font = 'bold 11px monospace';
+  context.textAlign = 'right';
+  context.textBaseline = 'top';
+  context.fillText('Threat Level', barX + DIFF_BAR_WIDTH, labelY);
+
+  // Background
+  context.fillStyle = HUD_BG;
+  context.fillRect(barX, barY, DIFF_BAR_WIDTH, DIFF_BAR_HEIGHT);
+
+  // Fill — green → yellow → orange → red gradient
+  const r = Math.min(255, Math.round(fill * 2 * 255));
+  const g = Math.min(255, Math.round((1 - fill) * 2 * 255));
+  context.fillStyle = `rgb(${r}, ${g}, 40)`;
+  context.fillRect(barX, barY, DIFF_BAR_WIDTH * fill, DIFF_BAR_HEIGHT);
+
+  // Tick marks at each difficulty threshold (Medium, Hard, ..., Insane)
+  for (let i = 1; i < DIFFICULTY_LABELS.length; i++) {
+    const tickX = barX + (DIFF_BAR_WIDTH * i) / DIFFICULTY_LABELS.length;
+    context.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(tickX, barY + 2);
+    context.lineTo(tickX, barY + DIFF_BAR_HEIGHT - 2);
+    context.stroke();
+  }
+
+  // Border
+  context.strokeStyle = DARK_GRAY;
+  context.lineWidth = 1;
+  context.strokeRect(barX, barY, DIFF_BAR_WIDTH, DIFF_BAR_HEIGHT);
+
+  // Difficulty label (Easy/Medium/etc.) centered inside bar
+  const labelIndex = Math.min(Math.floor(fill * (DIFFICULTY_LABELS.length - 1)), DIFFICULTY_LABELS.length - 1);
+  const label = DIFFICULTY_LABELS[labelIndex];
+
+  context.fillStyle = WHITE;
+  context.font = 'bold 13px monospace';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(label, barX + DIFF_BAR_WIDTH / 2, barY + DIFF_BAR_HEIGHT / 2);
 }

@@ -41,6 +41,8 @@ interface ServerUpdate {
   spiders: SpiderState[];
   arrows: ArrowState[];
   expOrbs: ExpOrbState[];
+  threatLevel: number;
+  threatProgress: number;
 }
 
 export type WeaponType = 'turret' | 'springer' | 'spiderweb' | 'crossbow';
@@ -120,6 +122,8 @@ interface GameState {
   spiders?: SpiderState[];
   arrows?: ArrowState[];
   expOrbs?: ExpOrbState[];
+  threatLevel?: number;
+  threatProgress?: number;
 }
 
 const gameUpdates: ServerUpdate[] = [];
@@ -179,6 +183,8 @@ export function getCurrentState(): GameState {
       spiders: latestUpdate.spiders || [],
       arrows: latestUpdate.arrows || [],
       expOrbs: latestUpdate.expOrbs || [],
+      threatLevel: latestUpdate.threatLevel,
+      threatProgress: latestUpdate.threatProgress,
     };
   } else {
     const baseUpdate = gameUpdates[base];
@@ -195,6 +201,8 @@ export function getCurrentState(): GameState {
       spiders: next.spiders || [],
       arrows: next.arrows || [],
       expOrbs: next.expOrbs || [],
+      threatLevel: next.threatLevel,
+      threatProgress: next.threatProgress,
     };
   }
 }

@@ -17,9 +17,10 @@ import Spider from "./weapons/spider";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
 import { BasicTurretConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
-import { LUMBERJACK as LUMBERJACK_CONFIG, CHAINSAWER as CHAINSAWER_CONFIG, LOGHOUSE as LOGHOUSE_CONFIG, FOREMAN as FOREMAN_CONFIG, HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
+import { HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
+import { XP_PER_THRESHOLD } from "../shared/wave-configs";
 import applyCollisions from "./collisions";
-import { MobSpawner } from "./systems/mob-spawner";
+import WaveManager from "./systems/wave-manager";
 import {
   applySpiderwebSlow,
   updateSpiders,
@@ -40,7 +41,7 @@ class Game {
   expOrbs: ExpOrb[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
-  mobSpawner: MobSpawner;
+  waveManager: WaveManager;
   spiders: Spider[];
   arrows: Arrow[];
 
@@ -57,25 +58,13 @@ class Game {
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
-    this.mobSpawner = new MobSpawner();
-    this.mobSpawner.register('lumberjack', LUMBERJACK_CONFIG.BASE_SPAWN_INTERVAL,
-      (id, x, y) => new Lumberjack(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
-    this.mobSpawner.register('chainsawer', CHAINSAWER_CONFIG.BASE_SPAWN_INTERVAL,
-      (id, x, y) => new Chainsawer(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
-    this.mobSpawner.register('foreman', FOREMAN_CONFIG.BASE_SPAWN_INTERVAL,
-      (id, x, y) => new Foreman(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
-    this.mobSpawner.register('loghouse', LOGHOUSE_CONFIG.BASE_SPAWN_INTERVAL,
-      (id, x, y) => new Loghouse(id, x, y, x, y),
-      () => {
-        const center = Constants.MAP_SIZE / 2;
-        const minDist = Constants.MAP_SIZE * 0.35;
-        const maxDist = Constants.MAP_SIZE * 0.45;
-        const angle = Math.random() * 2 * Math.PI;
-        const dist = minDist + Math.random() * (maxDist - minDist);
-        return { x: center + Math.cos(angle) * dist, y: center + Math.sin(angle) * dist };
-      });
-    this.mobSpawner.register('harvester', HARVESTER_CONFIG.BASE_SPAWN_INTERVAL,
-      (id, x, y) => new Harvester(id, x, y, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
+    this.waveManager = new WaveManager();
+    const center = Constants.MAP_SIZE / 2;
+    this.waveManager.registerMobType('lumberjack', (id, x, y) => new Lumberjack(id, x, y, center, center));
+    this.waveManager.registerMobType('chainsawer', (id, x, y) => new Chainsawer(id, x, y, center, center));
+    this.waveManager.registerMobType('foreman', (id, x, y) => new Foreman(id, x, y, center, center));
+    this.waveManager.registerMobType('loghouse', (id, x, y) => new Loghouse(id, x, y, x, y));
+    this.waveManager.registerMobType('harvester', (id, x, y) => new Harvester(id, x, y, center, center));
     setInterval(this.update.bind(this), 1000 / 60);
 
     this.trees.push(new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2));
@@ -177,8 +166,12 @@ class Game {
     // Don't simulate when no players are connected
     if (Object.keys(this.sockets).length === 0) return;
 
-    // Spawn mobs
-    this.mobSpawner.update(dt, this.mobs);
+    // Compute cumulative XP for threat level (sum of totalExpEarned across connected players)
+    const playerList = Object.values(this.players);
+    const cumulativeXP = playerList.reduce((sum, p) => sum + p.totalExpEarned, 0);
+
+    // Continuous trickle + wave events
+    this.waveManager.update(dt, this.mobs, cumulativeXP);
 
     // Deployable behaviors
     applySpiderwebSlow(this.mobs, this.deployables);
@@ -233,20 +226,14 @@ class Game {
       });
     });
 
-    // Loghouses spawn lumberjacks around them
+    // Loghouses spawn mobs around them (type scales with threat level)
+    const loghouseThreat = this.waveManager.getThreatLevel();
     this.mobs.filter((m): m is Loghouse => m.mobType === 'loghouse' && m.hp > 0).forEach(loghouse => {
       if (loghouse.advanceLumberjackTimer(dt)) {
         const count = Math.floor(Math.random() * 3);
         for (let i = 0; i < count; i++) {
-          const angle = Math.random() * 2 * Math.PI;
-          const dist = 40 + Math.random() * 30;
-          const lumberjack = new Lumberjack(
-            `lumberjack_${Math.random().toString(36).slice(2, 8)}`,
-            loghouse.x + Math.cos(angle) * dist,
-            loghouse.y + Math.sin(angle) * dist,
-            Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2,
-          );
-          this.mobs.push(lumberjack);
+          const mob = loghouse.spawnMob(loghouseThreat, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2);
+          this.mobs.push(mob);
         }
       }
     });
@@ -293,12 +280,15 @@ class Game {
     const ATTRACT_RADIUS = 300;
     const ATTRACT_SPEED = 200;
 
+    // Compute average level for catch-up bonus (underleveled players earn extra XP)
+    const avgLevel = playerList.reduce((sum, p) => sum + p.level, 0) / playerList.length;
+
     const consumedOrbs: ExpOrb[] = [];
     this.expOrbs.forEach(orb => {
       let closest: Player | null = null;
       let closestDist = ATTRACT_RADIUS;
 
-      for (const player of Object.values(this.players)) {
+      for (const player of playerList) {
         const dist = orb.distanceTo(player);
         if (dist < closestDist) {
           closestDist = dist;
@@ -313,7 +303,7 @@ class Game {
 
         if (orb.distanceTo(closest) < Constants.PLAYER_RADIUS) {
           consumedOrbs.push(orb);
-          closest.addExp(orb.expValue);
+          closest.addExp(orb.expValue, avgLevel);
         }
       }
     });
@@ -349,7 +339,7 @@ class Game {
     this.spiders = [];
     this.arrows = [];
     this.expOrbs = [];
-    this.mobSpawner.reset();
+    this.waveManager.reset();
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
   }
@@ -389,6 +379,8 @@ class Game {
       spiders: this.spiders.map((s) => s.serializeForUpdate()),
       arrows: this.arrows.map((a) => a.serializeForUpdate()),
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
+      threatLevel: this.waveManager.getThreatLevel(),
+      threatProgress: (Object.values(this.players).reduce((s, p) => s + p.totalExpEarned, 0) % XP_PER_THRESHOLD) / XP_PER_THRESHOLD,
     };
   }
 }

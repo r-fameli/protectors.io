@@ -1,6 +1,7 @@
 import GameObject from './object';
 import Constants from '../shared/constants';
 import { WEAPON_ENTRIES } from '../shared/weapon-configs';
+import { CATCH_UP_MULT } from '../shared/wave-configs';
 
 const EXP_BASE_THRESHOLD = 100;
 
@@ -29,6 +30,8 @@ class Player extends GameObject {
   score: number;
   weaponSlots: Record<string, WeaponSlot>;
   exp: number;
+  /** Total XP ever earned by this player (never decremented). Used for threat level. */
+  totalExpEarned: number;
   level: number;
   nextLevelExp: number;
   upgrades: UpgradeLevels;
@@ -45,13 +48,19 @@ class Player extends GameObject {
       this.weaponSlots[w.type] = { cooldown: 0, idCounter: 0 };
     }
     this.exp = 0;
+    this.totalExpEarned = 0;
     this.level = 1;
     this.nextLevelExp = EXP_BASE_THRESHOLD;
     this.upgrades = { cooldown: 0, range: 0, damage: 0 };
     this.pendingUpgrades = 0;
   }
 
-  addExp(amount: number) {
+  addExp(amount: number, avgLevel?: number) {
+    // Catch-up bonus: underleveled players earn extra XP
+    if (avgLevel && this.level < avgLevel) {
+      amount = Math.round(amount * (1 + (avgLevel - this.level) * CATCH_UP_MULT));
+    }
+    this.totalExpEarned += amount;
     this.exp += amount;
     while (this.exp >= this.nextLevelExp) {
       this.exp -= this.nextLevelExp;
