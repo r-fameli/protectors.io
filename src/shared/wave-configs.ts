@@ -1,11 +1,11 @@
 /**
- * XP_PER_THRESHOLD: cumulative player XP needed to increase threat level by 1.
- * 1 lumberjack = 10 XP, 1 chainsawer = 30 XP, 1 loghouse = 100 XP,
- * 1 harvester = 50 XP, 1 foreman = 10 XP.
- * At ~300 XP per tier, threat rises ~1 tier per 30-40 kills early game.
- * Multiple players earn faster → threat rises faster → natural player-count scaling.
+ * TIME_PER_THRESHOLD: cumulative player-seconds needed to increase threat level by 1.
+ * Each connected player contributes dt per tick. 2 players for 60s = 120 player-seconds.
+ * At 120s per tier with 1 player, threat rises ~1 tier per 2 minutes.
+ * More players → threat rises faster → natural player-count scaling.
+ * No XP edge cases (hoarding, drop-off gaps).
  */
-export const XP_PER_THRESHOLD = 300;
+export const TIME_PER_THRESHOLD = 120;
 
 /** Minimum seconds between sequential wave events (prevents stacking). */
 export const MIN_WAVE_INTERVAL = 45;
@@ -51,42 +51,42 @@ export interface WaveCompositionEntry {
 }
 
 export interface WaveEvent {
-  /** Cumulative XP needed before this wave can fire. */
-  xpThreshold: number;
+  /** Cumulative player-seconds needed before this wave can fire. */
+  timeThreshold: number;
   /** Display label (e.g. "Wave 1"). */
   label: string;
   composition: WaveCompositionEntry[];
 }
 
 /**
- * Wave events: discrete spawn groups triggered when cumulative XP
- * reaches xpThreshold AND at least MIN_WAVE_INTERVAL has passed
- * since the last wave event. Each event fires at most once per game.
+ * Wave events: discrete spawn groups triggered when cumulative
+ * player-time reaches timeThreshold AND at least MIN_WAVE_INTERVAL
+ * has passed since the last wave event. Each event fires at most once per game.
  */
 export const WAVE_EVENTS: WaveEvent[] = [
-  { xpThreshold: 500,  label: "Wave 1", composition: [
+  { timeThreshold: 200,  label: "Wave 1", composition: [
     { type: 'lumberjack', count: 8 },
     { type: 'chainsawer', count: 2 },
   ]},
-  { xpThreshold: 1500, label: "Wave 2", composition: [
+  { timeThreshold: 600, label: "Wave 2", composition: [
     { type: 'lumberjack', count: 12 },
     { type: 'chainsawer', count: 4 },
     { type: 'foreman', count: 1 },
   ]},
-  { xpThreshold: 3500, label: "Wave 3", composition: [
+  { timeThreshold: 1400, label: "Wave 3", composition: [
     { type: 'lumberjack', count: 15 },
     { type: 'chainsawer', count: 6 },
     { type: 'foreman', count: 2 },
     { type: 'harvester', count: 1 },
   ]},
-  { xpThreshold: 6000, label: "Wave 4", composition: [
+  { timeThreshold: 2400, label: "Wave 4", composition: [
     { type: 'lumberjack', count: 20 },
     { type: 'chainsawer', count: 8 },
     { type: 'foreman', count: 3 },
     { type: 'harvester', count: 2 },
     { type: 'loghouse', count: 1, spawnRing: true },
   ]},
-  { xpThreshold: 10000, label: "Wave 5", composition: [
+  { timeThreshold: 4000, label: "Wave 5", composition: [
     { type: 'lumberjack', count: 25 },
     { type: 'chainsawer', count: 12 },
     { type: 'foreman', count: 4 },

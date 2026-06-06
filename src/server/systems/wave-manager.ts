@@ -1,7 +1,7 @@
 import Constants from "../../shared/constants";
 import Mob from "../mobs/mob";
 import {
-  XP_PER_THRESHOLD,
+  TIME_PER_THRESHOLD,
   MIN_WAVE_INTERVAL,
   HP_SCALE_PER_THREAT,
   SPEED_SCALE_PER_THREAT,
@@ -26,7 +26,7 @@ interface ContinuousTimer {
 
 /** Internal wave event with fire-once flag. */
 interface WaveEventState {
-  xpThreshold: number;
+  timeThreshold: number;
   label: string;
   composition: WaveCompositionEntry[];
   triggered: boolean;
@@ -48,12 +48,14 @@ class WaveManager {
   private continuousTimers: ContinuousTimer[];
   private waveEvents: WaveEventState[];
   private _threatLevel: number;
+  private totalPlayerTime: number;
   private lastWaveEventTime: number;
   private gameStartTime: number;
 
   constructor() {
     this.factories = new Map();
     this._threatLevel = 1;
+    this.totalPlayerTime = 0;
     this.lastWaveEventTime = 0;
     this.gameStartTime = Date.now();
 
@@ -71,7 +73,7 @@ class WaveManager {
 
     // Initialize wave events from shared configs
     this.waveEvents = WAVE_EVENTS.map((evt: WaveEvent) => ({
-      xpThreshold: evt.xpThreshold,
+      timeThreshold: evt.timeThreshold,
       label: evt.label,
       composition: evt.composition,
       triggered: false,
@@ -86,15 +88,21 @@ class WaveManager {
     return this._threatLevel;
   }
 
+  /** Total player-seconds accumulated this game (sum of dt per connected player). */
+  getTotalPlayerTime(): number {
+    return this.totalPlayerTime;
+  }
+
   /**
    * Main update. Called every game tick.
    * @param dt Delta time in seconds.
    * @param mobs Mutable mobs array to push spawned mobs into.
-   * @param cumulativeXP Sum of totalExpEarned across all connected players.
+   * @param playerCount Number of currently connected players.
    */
-  update(dt: number, mobs: Mob[], cumulativeXP: number): void {
-    // 1. Compute threat level from cumulative player XP
-    this._threatLevel = 1 + Math.floor(cumulativeXP / XP_PER_THRESHOLD);
+  update(dt: number, mobs: Mob[], playerCount: number): void {
+    // 1. Accumulate player-time and compute threat level
+    this.totalPlayerTime += dt * playerCount;
+    this._threatLevel = 1 + Math.floor(this.totalPlayerTime / TIME_PER_THRESHOLD);
 
     // 2. Continuous trickle spawns
     for (const timer of this.continuousTimers) {
@@ -127,17 +135,17 @@ class WaveManager {
       }
     }
 
-    // 3. Wave events — fire when cumulative XP threshold met + cooldown elapsed
+    // 3. Wave events — fire when total player-time threshold met + cooldown elapsed
     const elapsed = (Date.now() - this.gameStartTime) / 1000;
 
     for (const event of this.waveEvents) {
       if (event.triggered) continue;
-      if (cumulativeXP < event.xpThreshold) continue;
+      if (this.totalPlayerTime < event.timeThreshold) continue;
       if (elapsed - this.lastWaveEventTime < MIN_WAVE_INTERVAL) continue;
 
       event.triggered = true;
       this.lastWaveEventTime = elapsed;
-      console.log(`[WaveManager] ${event.label} triggered at threat ${this._threatLevel}, cumulativeXP=${cumulativeXP}`);
+      console.log(`[WaveManager] ${event.label} triggered at threat ${this._threatLevel}, time=${Math.round(this.totalPlayerTime)}s`);
 
       for (const entry of event.composition) {
         const factory = this.factories.get(entry.type);
@@ -157,6 +165,7 @@ class WaveManager {
 
   reset(): void {
     this._threatLevel = 1;
+    this.totalPlayerTime = 0;
     this.lastWaveEventTime = 0;
     this.gameStartTime = Date.now();
     for (const timer of this.continuousTimers) {

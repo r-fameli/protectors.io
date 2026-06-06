@@ -18,7 +18,7 @@ import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
 import { BasicTurretConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
 import { HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
-import { XP_PER_THRESHOLD } from "../shared/wave-configs";
+import { TIME_PER_THRESHOLD } from "../shared/wave-configs";
 import applyCollisions from "./collisions";
 import WaveManager from "./systems/wave-manager";
 import {
@@ -166,12 +166,10 @@ class Game {
     // Don't simulate when no players are connected
     if (Object.keys(this.sockets).length === 0) return;
 
-    // Compute cumulative XP for threat level (sum of totalExpEarned across connected players)
     const playerList = Object.values(this.players);
-    const cumulativeXP = playerList.reduce((sum, p) => sum + p.totalExpEarned, 0);
 
-    // Continuous trickle + wave events
-    this.waveManager.update(dt, this.mobs, cumulativeXP);
+    // Continuous trickle + wave events (scales with player count)
+    this.waveManager.update(dt, this.mobs, playerList.length);
 
     // Deployable behaviors
     applySpiderwebSlow(this.mobs, this.deployables);
@@ -380,7 +378,7 @@ class Game {
       arrows: this.arrows.map((a) => a.serializeForUpdate()),
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
       threatLevel: this.waveManager.getThreatLevel(),
-      threatProgress: (Object.values(this.players).reduce((s, p) => s + p.totalExpEarned, 0) % XP_PER_THRESHOLD) / XP_PER_THRESHOLD,
+      threatProgress: (this.waveManager.getTotalPlayerTime() % TIME_PER_THRESHOLD) / TIME_PER_THRESHOLD,
     };
   }
 }
