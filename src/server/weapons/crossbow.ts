@@ -11,6 +11,9 @@ class Crossbow extends GameObject {
   fireCdInterval: number;
   aimDirection: number;
   damageMultiplier: number;
+  /** Overridden by weapon upgrades. */
+  arrowSpeed: number;
+  arrowMaxTravel: number;
 
   constructor(id: string, x: number, y: number, dir: number) {
     super(id, x, y, dir, 0);
@@ -24,6 +27,8 @@ class Crossbow extends GameObject {
     this.fireCdInterval = CrossbowConfig.FIRE_COOLDOWN;
     this.aimDirection = dir;
     this.damageMultiplier = 1;
+    this.arrowSpeed = CrossbowConfig.ARROW_SPEED;
+    this.arrowMaxTravel = CrossbowConfig.ARROW_MAX_TRAVEL;
   }
 
   update(dt: number): boolean {

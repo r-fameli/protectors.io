@@ -16,7 +16,7 @@ import Arrow from "./weapons/arrow";
 import Spider from "./weapons/spider";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
-import { BasicTurretConfig, WEAPON_ENTRIES } from "../shared/weapon-configs";
+import { BasicTurretConfig, getWeaponConfig } from "../shared/weapon-configs";
 import { HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import { TIME_PER_THRESHOLD } from "../shared/wave-configs";
 import applyCollisions from "./collisions";
@@ -28,6 +28,7 @@ import {
   updateCrossbows,
   updateSpringers,
   updateArrows,
+  applyWeaponState,
 } from "./systems/deployable-system";
 
 class Game {
@@ -104,10 +105,10 @@ class Game {
     }
   }
 
-  handleUpgrade(socket: import("socket.io").Socket, type: 'cooldown' | 'range' | 'damage') {
+  handleUpgrade(socket: import("socket.io").Socket, upgradeKey: string) {
     const player = this.players[socket.id];
     if (player && player.pendingUpgrades > 0) {
-      player.applyUpgrade(type);
+      player.applyUpgrade(upgradeKey);
     }
   }
 
@@ -119,6 +120,7 @@ class Game {
     incCounter: () => number,
     config: { RADIUS: number; COOLDOWN: number; ID_PREFIX: string },
     create: (id: string, x: number, y: number) => Turret | Springer | Spiderweb,
+    weaponType: string,
   ) {
     let cooldown = cd();
     cooldown -= dt * 1000;
@@ -134,12 +136,10 @@ class Game {
       });
 
       if (!blocked) {
-        cooldown += config.COOLDOWN * player.cooldownMultiplier;
+        cooldown += config.COOLDOWN;
         const id = incCounter();
-        const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py) as Turret | Springer | Spiderweb;
-        // Apply range and damage upgrades
-        d.attackRadius *= player.rangeMultiplier;
-        d.damageMultiplier = player.damageMultiplier;
+        const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py);
+        applyWeaponState(d, weaponType, player);
         this.deployables.push(d);
       } else {
         cooldown = 0;
@@ -185,20 +185,20 @@ class Game {
       (bullet) => !bulletsToRemove.includes(bullet),
     );
 
-    // Update players — place deployables on cooldown
+    // Update players — place deployables on cooldown (only owned weapons)
     Object.keys(this.sockets).forEach((playerID) => {
       const player = this.players[playerID];
       player.update(dt);
 
-      for (const we of WEAPON_ENTRIES) {
-        const slot = player.weaponSlots[we.type];
-        if (!slot) continue;
+      for (const weaponType of Object.keys(player.weaponSlots)) {
+        const slot = player.weaponSlots[weaponType];
         this.tryPlaceDeployable(dt, player,
           () => slot.cooldown,
           v => { slot.cooldown = v; },
           () => ++slot.idCounter,
-          we.config,
-          (id, x, y) => this.createDeployable(we.type, id, x, y, player.direction),
+          getWeaponConfig(weaponType),
+          (id, x, y) => this.createDeployable(weaponType, id, x, y, player.direction),
+          weaponType,
         );
       }
     });

@@ -9,6 +9,10 @@ class Spiderweb extends GameObject {
   attackRadius: number;
   slowMultiplier: number;
   damageMultiplier: number;
+  /** Base spider damage. Multiplied by damageMultiplier at attack time. Overridden by upgrades. */
+  spiderDamage: number;
+  /** Spider attack interval (ms). Overridden by upgrades. */
+  spiderAttackInterval: number;
 
   constructor(id: string, x: number, y: number) {
     super(id, x, y, 0, 0);
@@ -20,6 +24,8 @@ class Spiderweb extends GameObject {
     this.attackRadius = SpiderwebConfig.ATTACK_RADIUS;
     this.slowMultiplier = SpiderwebConfig.SLOW_MULTIPLIER;
     this.damageMultiplier = 1;
+    this.spiderDamage = SpiderwebConfig.SPIDER_DAMAGE;
+    this.spiderAttackInterval = SpiderwebConfig.SPIDER_ATTACK_INTERVAL;
   }
 
   update(dt: number): boolean {

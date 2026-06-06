@@ -14,7 +14,7 @@ import { renderTree, renderTreeHP } from './tree';
 import { renderBullet } from './bullet';
 import { renderExpOrb } from './exp-orb';
 import { renderMinimap } from './minimap';
-import { renderWeaponCooldowns, renderExpBar, renderDifficultyBar } from './hud';
+import { renderWeaponCooldowns, renderExpBar, renderDifficultyBar, updateUpgradePanel, resetUpgradePanelCache } from './hud';
 
 // ── Canvas setup ──────────────────────────────────────────
 
@@ -61,29 +61,15 @@ function render() {
 
   const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs, threatLevel, threatProgress } = getCurrentState();
   if (me) {
-    // Show upgrade panel when upgrades are pending
+    // Show/hide upgrade panel
     const panel = document.getElementById('upgrade-panel');
-    const buttons = panel?.querySelectorAll<HTMLButtonElement>('.upgrade-btn');
-    if (panel && buttons) {
+    if (panel) {
       if (me.pendingUpgrades > 0) {
         panel.classList.remove('hidden');
-
-        // Update button labels with current upgrade values
-        const labels: Record<string, { label: string; next: (level: number) => string }> = {
-          cooldown: { label: 'Faster Cooldowns', next: (l: number) => `-${Math.round((1 - Math.pow(0.9, l + 1)) * 100)}%` },
-          range: { label: 'Bigger Weapon Range', next: (l: number) => `+${Math.round(0.1 * (l + 1) * 100)}%` },
-          damage: { label: 'Damage Increase', next: (l: number) => `+${Math.round(0.15 * (l + 1) * 100)}%` },
-        };
-        buttons.forEach(btn => {
-          const type = btn.getAttribute('data-upgrade') as string;
-          const info = labels[type];
-          if (info) {
-            const level = me.upgrades[type as keyof typeof me.upgrades] || 0;
-            btn.textContent = `${info.label} ${info.next(level)}`;
-          }
-        });
+        updateUpgradePanel(me.availableUpgrades || []);
       } else {
         panel.classList.add('hidden');
+        resetUpgradePanelCache();
       }
     }
     renderBackground();

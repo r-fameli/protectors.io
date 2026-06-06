@@ -36,8 +36,8 @@ io.on('connection', socket => {
     game.handleInput(socket, data);
   });
 
-  socket.on(Constants.MSG_TYPES.CHOOSE_UPGRADE, (type: 'cooldown' | 'range' | 'damage') => {
-    game.handleUpgrade(socket, type);
+  socket.on(Constants.MSG_TYPES.CHOOSE_UPGRADE, (upgradeKey: string) => {
+    game.handleUpgrade(socket, upgradeKey);
   });
 
   socket.on('disconnect', () => {

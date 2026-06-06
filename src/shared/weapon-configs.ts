@@ -51,15 +51,22 @@ export const CrossbowConfig = {
     RADIUS: 20,
     ID_PREFIX: 'crossbow',
     ATTACK_RADIUS: 250,
-    FIRE_COOLDOWN: 4000,
-    DAMAGE: 100,
+    FIRE_COOLDOWN: 5000,
+    DAMAGE: 75,
     ARROW_SPEED: 600,
     ARROW_MAX_TRAVEL: 350,
 };
 
-export const WEAPON_ENTRIES: { type: string; config: { COOLDOWN: number; DURATION: number; RADIUS: number; ID_PREFIX: string } }[] = [
-    { type: 'turret', config: BasicTurretConfig },
-    { type: 'springer', config: SpringerConfig },
-    { type: 'spiderweb', config: SpiderwebConfig },
-    { type: 'crossbow', config: CrossbowConfig },
-];
+/**
+ * Get base weapon config by type string. Returns the common fields
+ * (COOLDOWN, DURATION, RADIUS, ID_PREFIX) needed for placement logic.
+ */
+export function getWeaponConfig(type: string): { COOLDOWN: number; DURATION: number; RADIUS: number; ID_PREFIX: string } {
+  switch (type) {
+    case 'turret': return BasicTurretConfig;
+    case 'springer': return SpringerConfig;
+    case 'spiderweb': return SpiderwebConfig;
+    case 'crossbow': return CrossbowConfig;
+    default: throw new Error(`Unknown weapon type: ${type}`);
+  }
+}

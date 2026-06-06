@@ -1,4 +1,4 @@
-import { connect, play, chooseUpgrade } from "./networking";
+import { connect, play } from "./networking";
 import { startRendering, stopRendering } from "./render/render";
 import { startCapturingInput, stopCapturingInput } from "./input";
 import { downloadAssets } from "./assets";
@@ -10,7 +10,6 @@ const playMenu = document.getElementById("play-menu")!;
 const playButton = document.getElementById("play-button")!;
 const usernameInput = document.getElementById("username-input") as HTMLInputElement;
 const upgradePanel = document.getElementById("upgrade-panel")!;
-const upgradeButtons = upgradePanel.querySelectorAll<HTMLButtonElement>(".upgrade-btn");
 
 function onGameOver() {
   stopCapturingInput();
@@ -18,6 +17,8 @@ function onGameOver() {
   upgradePanel.classList.add("hidden");
   playMenu.classList.remove("hidden");
   usernameInput.focus();
+  // Reset upgrade panel cache so it re-renders next game
+  (document.getElementById('upgrade-choices')!).innerHTML = '';
 }
 
 Promise.all([connect(onGameOver), downloadAssets()]).then(() => {
@@ -29,13 +30,6 @@ Promise.all([connect(onGameOver), downloadAssets()]).then(() => {
     if (e.key === "Enter") {
       playButton.click();
     }
-  });
-
-  upgradeButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const type = btn.getAttribute("data-upgrade") as 'cooldown' | 'range' | 'damage';
-      chooseUpgrade(type);
-    });
   });
 
   playButton.onclick = () => {

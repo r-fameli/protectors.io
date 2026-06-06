@@ -53,10 +53,12 @@ export interface WeaponState {
   maxCooldown: number;
 }
 
-export interface UpgradeLevels {
-  cooldown: number;
-  range: number;
-  damage: number;
+export interface UpgradeChoice {
+  upgradeKey: string;
+  label: string;
+  description: string;
+  weaponType: string;
+  level: number;
 }
 
 export interface PlayerState {
@@ -69,8 +71,8 @@ export interface PlayerState {
   exp: number;
   level: number;
   nextLevelExp: number;
-  upgrades: UpgradeLevels;
   pendingUpgrades: number;
+  availableUpgrades: UpgradeChoice[];
 }
 
 interface BulletState {
@@ -218,7 +220,7 @@ function interpolateObject<T>(object1: T, object2: T | undefined, ratio: number)
       interpolated[key] = interpolateDirection((object1 as Record<string, number>)[key], (object2 as Record<string, number>)[key], ratio);
     }
     // FIXME: Is this case needed?
-    else if (key === 'weapons') {
+    else if (key === 'weapons' || key === 'availableUpgrades') {
       interpolated[key] = (object2 as Record<string, unknown>)[key] || (object1 as Record<string, unknown>)[key];
     } else {
       interpolated[key] = (object1 as Record<string, number>)[key] + ((object2 as Record<string, number>)[key] - (object1 as Record<string, number>)[key]) * ratio;

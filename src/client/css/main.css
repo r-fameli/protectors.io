@@ -111,10 +111,30 @@ button:focus {
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
+  text-align: left;
 }
 
 .upgrade-btn:hover {
   background-color: #3498db;
+}
+
+.upgrade-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.upgrade-desc {
+  display: block;
+  font-size: 11px;
+  color: #bdc3c7;
+}
+
+.upgrade-weapon-level {
+  display: block;
+  font-size: 10px;
+  color: #7f8c8d;
+  margin-bottom: 2px;
 }
 
 #disconnect-modal {

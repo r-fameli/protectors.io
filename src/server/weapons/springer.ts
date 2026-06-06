@@ -8,6 +8,8 @@ class Springer extends GameObject {
   radius: number;
   attackRadius: number;
   caltropCooldown: number;
+  /** How often caltrops fire (ms). Overridden by weapon upgrades. */
+  caltropCdInterval: number;
   damageMultiplier: number;
 
   constructor(id: string, x: number, y: number) {
@@ -19,6 +21,7 @@ class Springer extends GameObject {
     this.radius = SpringerConfig.RADIUS;
     this.attackRadius = SpringerConfig.ATTACK_RADIUS;
     this.caltropCooldown = 0;
+    this.caltropCdInterval = 3000;
     this.damageMultiplier = 1;
   }
 

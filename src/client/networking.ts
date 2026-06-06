@@ -25,6 +25,6 @@ export const updateDirection = (dir: number, isMoving: boolean) => {
   socket.emit(Constants.MSG_TYPES.INPUT, { direction: dir, isMoving });
 };
 
-export const chooseUpgrade = (type: 'cooldown' | 'range' | 'damage') => {
-  socket.emit(Constants.MSG_TYPES.CHOOSE_UPGRADE, type);
+export const chooseUpgrade = (upgradeKey: string) => {
+  socket.emit(Constants.MSG_TYPES.CHOOSE_UPGRADE, upgradeKey);
 };

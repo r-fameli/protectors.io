@@ -1,5 +1,6 @@
 import Mob from "../mobs/mob";
 import Bullet from "../bullet";
+import Player from "../player";
 import Turret from "../weapons/turret";
 import Crossbow from "../weapons/crossbow";
 import Springer from "../weapons/springer";
@@ -9,7 +10,8 @@ import Arrow from "../weapons/arrow";
 import Caltrop from "../weapons/caltrop";
 import { BasicTurretConfig, CrossbowConfig, SpringerConfig, SpiderwebConfig } from "../../shared/weapon-configs";
 
-type AnyDeployable = Turret | Springer | Spiderweb | Crossbow;
+/** Union of all deployable types. Extended as new weapons added. */
+export type AnyDeployable = Turret | Springer | Spiderweb | Crossbow;
 
 /** Reset slow, apply spiderweb slows to mobs within web radius. */
 export function applySpiderwebSlow(mobs: Mob[], deployables: AnyDeployable[]): void {
@@ -43,8 +45,8 @@ export function updateSpiders(dt: number, mobs: Mob[], deployables: AnyDeployabl
         `${web.id}_spider`,
         web.x, web.y,
         web.id,
-        Math.round(SpiderwebConfig.SPIDER_DAMAGE * web.damageMultiplier),
-        SpiderwebConfig.SPIDER_ATTACK_INTERVAL,
+        Math.round(web.spiderDamage * web.damageMultiplier),
+        web.spiderAttackInterval,
       );
       result.push(spider);
     }
@@ -155,8 +157,8 @@ export function updateCrossbows(dt: number, mobs: Mob[], deployables: AnyDeploya
         crossbow.id, crossbow.x, crossbow.y,
         crossbow.aimDirection,
         Math.round(CrossbowConfig.DAMAGE * crossbow.damageMultiplier),
-        CrossbowConfig.ARROW_MAX_TRAVEL,
-        CrossbowConfig.ARROW_SPEED,
+        crossbow.arrowMaxTravel || CrossbowConfig.ARROW_MAX_TRAVEL,
+        crossbow.arrowSpeed || CrossbowConfig.ARROW_SPEED,
       ));
     } else if (!closest) {
       crossbow.fireCooldown = 0;
@@ -172,7 +174,7 @@ export function updateSpringers(dt: number, deployables: AnyDeployable[], caltro
 
     springer.caltropCooldown -= dt * 1000;
     if (springer.caltropCooldown <= 0) {
-      springer.caltropCooldown += 3000;
+      springer.caltropCooldown += springer.caltropCdInterval;
       const angle = Math.random() * 2 * Math.PI;
       const dist = Math.random() * springer.attackRadius;
       const cx = springer.x + Math.cos(angle) * dist;
@@ -205,4 +207,52 @@ export function updateArrows(dt: number, mobs: Mob[], arrows: Arrow[]): Arrow[] 
     }
   }
   return arrows.filter(a => !toRemove.includes(a));
+}
+
+/**
+ * Override a freshly-created deployable with the player's per-weapon upgrade stats.
+ * Switches on weapon type to narrow the deployable and stats to the correct types.
+ */
+export function applyWeaponState(d: AnyDeployable, type: string, player: Player): void {
+  const entry = player.getWeaponEntry(type);
+  if (!entry) return;
+
+  switch (type) {
+    case 'turret': {
+      if (entry.type !== 'turret') return;
+      const t = d as Turret;
+      t.fireCdInterval = entry.stats.fireCdInterval;
+      t.attackRadius = entry.stats.attackRadius;
+      t.damageMultiplier = entry.stats.damageMult;
+      break;
+    }
+    case 'springer': {
+      if (entry.type !== 'springer') return;
+      const s = d as Springer;
+      s.attackRadius = entry.stats.attackRadius;
+      s.damageMultiplier = entry.stats.damageMult;
+      s.caltropCdInterval = entry.stats.caltropCooldown;
+      break;
+    }
+    case 'spiderweb': {
+      if (entry.type !== 'spiderweb') return;
+      const w = d as Spiderweb;
+      w.attackRadius = entry.stats.attackRadius;
+      w.damageMultiplier = entry.stats.damageMult;
+      w.slowMultiplier = entry.stats.slowMultiplier;
+      w.spiderDamage = entry.stats.spiderDamage;
+      w.spiderAttackInterval = entry.stats.spiderAttackInterval;
+      break;
+    }
+    case 'crossbow': {
+      if (entry.type !== 'crossbow') return;
+      const c = d as Crossbow;
+      c.fireCdInterval = entry.stats.fireCdInterval;
+      c.attackRadius = entry.stats.attackRadius;
+      c.damageMultiplier = entry.stats.damageMult;
+      c.arrowSpeed = entry.stats.arrowSpeed;
+      c.arrowMaxTravel = entry.stats.arrowMaxTravel;
+      break;
+    }
+  }
 }

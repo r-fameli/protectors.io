@@ -1,6 +1,7 @@
 import { getAsset } from '../assets';
 import { canvas, context } from './common';
-import { PlayerState, WeaponState, WeaponType } from '../state';
+import { PlayerState, WeaponState, WeaponType, UpgradeChoice } from '../state';
+import { chooseUpgrade } from '../networking';
 import { HUD_BG, COOLDOWN_TINT, BLUE_ACCENT, WHITE, DARK_GRAY } from '../colors';
 import { DIFFICULTY_LABELS } from '../../shared/wave-configs';
 
@@ -127,4 +128,43 @@ export function renderDifficultyBar(threatLevel: number | undefined, threatProgr
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillText(label, barX + DIFF_BAR_WIDTH / 2, barY + DIFF_BAR_HEIGHT / 2);
+}
+
+let lastUpgradeKeys: string | null = null;
+
+/** Reset upgrade panel cache (e.g., on panel hide or game restart). */
+export function resetUpgradePanelCache(): void {
+  lastUpgradeKeys = null;
+}
+
+/** Create/update upgrade choice buttons in the DOM upgrade panel. */
+export function updateUpgradePanel(availableUpgrades: UpgradeChoice[]) {
+  const container = document.getElementById('upgrade-choices')!;
+  const keys = availableUpgrades.map(c => c.upgradeKey).join(',');
+  if (keys === lastUpgradeKeys) return;
+  lastUpgradeKeys = keys;
+
+  container.innerHTML = '';
+  availableUpgrades.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'upgrade-btn';
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'upgrade-label';
+    labelSpan.textContent = choice.label;
+
+    const levelSpan = document.createElement('span');
+    levelSpan.className = 'upgrade-weapon-level';
+    levelSpan.textContent = `${choice.weaponType.charAt(0).toUpperCase() + choice.weaponType.slice(1)} Lvl. ${choice.level}`;
+
+    const descSpan = document.createElement('span');
+    descSpan.className = 'upgrade-desc';
+    descSpan.textContent = choice.description;
+
+    btn.appendChild(labelSpan);
+    btn.appendChild(levelSpan);
+    btn.appendChild(descSpan);
+    btn.addEventListener('click', () => chooseUpgrade(choice.upgradeKey));
+    container.appendChild(btn);
+  });
 }
