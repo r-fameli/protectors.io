@@ -112,6 +112,15 @@ class Game {
     }
   }
 
+  /** Angles tried for ring placement, ordered priority (center first, then outward). */
+  private static readonly PLACEMENT_ANGLES = [
+    0,                        // straight ahead
+    Math.PI / 8,              // 22.5° right
+    -Math.PI / 8,             // 22.5° left
+    Math.PI / 4,              // 45° right
+    -Math.PI / 4,             // 45° left
+  ];
+
   private tryPlaceDeployable(
     dt: number,
     player: Player,
@@ -125,25 +134,31 @@ class Game {
     let cooldown = cd();
     cooldown -= dt * 1000;
     if (cooldown <= 0) {
-      const offset = Constants.PLAYER_RADIUS + config.RADIUS + 10;
-      const px = player.x + Math.cos(player.direction) * offset;
-      const py = player.y + Math.sin(player.direction) * offset;
+      const ringR = Constants.PLAYER_RADIUS + config.RADIUS + 10;
 
-      const blocked = this.deployables.some(d => {
-        const dx = d.x - px;
-        const dy = d.y - py;
-        return (dx * dx + dy * dy) < (config.RADIUS * 2) ** 2;
-      });
+      for (const angleOffset of Game.PLACEMENT_ANGLES) {
+        const px = player.x + Math.cos(player.direction + angleOffset) * ringR;
+        const py = player.y + Math.sin(player.direction + angleOffset) * ringR;
 
-      if (!blocked) {
-        cooldown += config.COOLDOWN;
-        const id = incCounter();
-        const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py);
-        applyWeaponState(d, weaponType, player);
-        this.deployables.push(d);
-      } else {
-        cooldown = 0;
+        const blocked = this.deployables.some(d => {
+          const dx = d.x - px;
+          const dy = d.y - py;
+          return (dx * dx + dy * dy) < (config.RADIUS * 2) ** 2;
+        });
+
+        if (!blocked) {
+          cooldown += config.COOLDOWN;
+          const id = incCounter();
+          const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py);
+          applyWeaponState(d, weaponType, player);
+          this.deployables.push(d);
+          setCd(cooldown);
+          return;
+        }
       }
+
+      // All candidates blocked — retry next frame
+      cooldown = 0;
     }
     setCd(cooldown);
   }
