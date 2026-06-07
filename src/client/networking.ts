@@ -3,7 +3,7 @@ import { processGameUpdate, pushChatMessage } from "./state";
 
 import Constants from "../shared/constants";
 
-const socket: Socket = io(`ws://${window.location.host}`);
+const socket: Socket = io();
 const connectedPromise = new Promise<void>((resolve) => {
   socket.on("connect", () => {
     console.log("Connected to server!");
