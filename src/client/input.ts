@@ -13,7 +13,8 @@ let isMoving = false;
 let chatOpen = false;
 
 function onKeyDown(e: KeyboardEvent) {
-  // Toggle chat on Enter
+  // Toggle chat on Enter — stop player and clear keys so no stale
+  // movement state persists while chat is open or after closing.
   if (e.key === "Enter" && !chatOpen) {
     chatOpen = true;
     e.preventDefault();
@@ -22,6 +23,8 @@ function onKeyDown(e: KeyboardEvent) {
       input.classList.remove("hidden");
       input.focus();
     }
+    updateDirection(direction, false);
+    for (const k of Object.keys(keys)) keys[k] = false;
     return;
   }
 
@@ -128,12 +131,25 @@ function onChatKeyDown(e: KeyboardEvent) {
   }
 }
 
+function onWindowBlur() {
+  for (const k of Object.keys(keys)) keys[k] = false;
+  if (isMoving) {
+    isMoving = false;
+    updateDirection(direction, false);
+  }
+}
+
 export function startCapturingInput() {
+  // Clear any stale key state from previous session
+  for (const k of Object.keys(keys)) keys[k] = false;
+  isMoving = false;
+
   // Defer to next microtask so any in-flight Enter from the start
   // screen finishes propagation before we start listening.
   setTimeout(() => {
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onWindowBlur);
     const chatInput = document.getElementById("chat-input");
     if (chatInput) chatInput.addEventListener("keydown", onChatKeyDown);
   }, 0);
@@ -142,6 +158,7 @@ export function startCapturingInput() {
 export function stopCapturingInput() {
   window.removeEventListener("keydown", onKeyDown);
   window.removeEventListener("keyup", onKeyUp);
+  window.removeEventListener("blur", onWindowBlur);
   const chatInput = document.getElementById("chat-input");
   if (chatInput) chatInput.removeEventListener("keydown", onChatKeyDown);
 }
