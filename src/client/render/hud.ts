@@ -142,21 +142,26 @@ export function updateUpgradePanel(availableUpgrades: UpgradeChoice[]) {
   availableUpgrades.forEach(choice => {
     const btn = document.createElement('button');
     btn.className = 'upgrade-btn';
+    const isAcquire = choice.upgradeKey.startsWith('acquire_');
+    const weaponName = choice.weaponType.charAt(0).toUpperCase() + choice.weaponType.slice(1);
 
+    // Line 1: Weapon Name Lvl. N (bold, white)
     const labelSpan = document.createElement('span');
     labelSpan.className = 'upgrade-label';
-    labelSpan.textContent = choice.label;
+    labelSpan.textContent = `${weaponName} Lvl. ${choice.level}`;
 
-    const levelSpan = document.createElement('span');
-    levelSpan.className = 'upgrade-weapon-level';
-    levelSpan.textContent = `${choice.weaponType.charAt(0).toUpperCase() + choice.weaponType.slice(1)} Lvl. ${choice.level}`;
+    // Line 2: upgrade title (dimmer) — "Faster Turret" or "New Weapon" for acquire
+    const subSpan = document.createElement('span');
+    subSpan.className = 'upgrade-subtitle';
+    subSpan.textContent = isAcquire ? 'New Weapon' : choice.label;
 
+    // Line 3: delta description
     const descSpan = document.createElement('span');
     descSpan.className = 'upgrade-desc';
     descSpan.textContent = choice.description;
 
     btn.appendChild(labelSpan);
-    btn.appendChild(levelSpan);
+    btn.appendChild(subSpan);
     btn.appendChild(descSpan);
     btn.addEventListener('click', () => chooseUpgrade(choice.upgradeKey));
     container.appendChild(btn);

@@ -168,10 +168,10 @@ button:focus {
   color: #bdc3c7;
 }
 
-.upgrade-weapon-level {
+.upgrade-subtitle {
   display: block;
-  font-size: 10px;
-  color: #7f8c8d;
+  font-size: 11px;
+  color: #95a5a6;
   margin-bottom: 2px;
 }
 
