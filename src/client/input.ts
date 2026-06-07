@@ -12,6 +12,16 @@ const keys: Record<string, boolean> = {};
 let isMoving = false;
 let chatOpen = false;
 
+function toggleUpgradePanel(): void {
+  const panel = document.getElementById('upgrade-panel');
+  if (!panel) return;
+  if (panel.classList.contains('minimized')) {
+    panel.classList.remove('minimized');
+  } else {
+    panel.classList.add('minimized');
+  }
+}
+
 function onKeyDown(e: KeyboardEvent) {
   // Toggle chat on Enter — stop player and clear keys so no stale
   // movement state persists while chat is open or after closing.
@@ -41,6 +51,28 @@ function onKeyDown(e: KeyboardEvent) {
       }
     }
     return;
+  }
+
+  // Tab toggles upgrade panel minimized state
+  if (e.key === "Tab") {
+    e.preventDefault();
+    toggleUpgradePanel();
+    return;
+  }
+
+  // Number keys 1-3 select upgrade choices
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= 3) {
+    const panel = document.getElementById('upgrade-panel');
+    if (panel && !panel.classList.contains('minimized')) {
+      const buttons = panel.querySelectorAll<HTMLButtonElement>('.upgrade-btn');
+      const btn = buttons[num - 1];
+      if (btn) {
+        e.preventDefault();
+        btn.click();
+        return;
+      }
+    }
   }
 
   keys[e.key] = true;

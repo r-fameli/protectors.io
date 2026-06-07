@@ -42,6 +42,7 @@ Promise.all([connect(onGameOver), downloadAssets()]).then(() => {
     play(usernameInput.value);
     playMenu.classList.add("hidden");
     chatBox.classList.remove("hidden");
+    document.getElementById('upgrade-panel')?.classList.remove('hidden');
     initState();
     startCapturingInput();
     startRendering();

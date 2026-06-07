@@ -16,9 +16,13 @@
     <input type="text" id="username-input" placeholder="Username" />
     <button id="play-button">PLAY</button>
   </div>
-  <div id="upgrade-panel" class="hidden">
-    <h3>Level up! Choose an upgrade:</h3>
-    <div id="upgrade-choices"></div>
+  <div id="upgrade-panel" class="minimized hidden">
+    <div id="upgrade-tab">Upgrades</div>
+    <div id="upgrade-body">
+      <h3 id="upgrade-title">Choose an upgrade:</h3>
+      <div id="upgrade-choices"></div>
+      <div id="upgrade-empty-msg" class="hidden">No upgrades available</div>
+    </div>
   </div>
     <div id="chat-box" class="hidden">
       <div id="chat-messages"></div>

@@ -131,11 +131,6 @@ export function renderDifficultyBar(threatLevel: number | undefined, threatProgr
 
 let lastUpgradeKeys: string | null = null;
 
-/** Reset upgrade panel cache (e.g., on panel hide or game restart). */
-export function resetUpgradePanelCache(): void {
-  lastUpgradeKeys = null;
-}
-
 /** Create/update upgrade choice buttons in the DOM upgrade panel. */
 export function updateUpgradePanel(availableUpgrades: UpgradeChoice[]) {
   const container = document.getElementById('upgrade-choices')!;

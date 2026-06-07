@@ -82,20 +82,58 @@ button:focus {
   right: 0;
   top: 50%;
   transform: translateY(-50%);
-  padding: 20px;
-  background-color: rgba(0, 0, 0, 0.88);
-  border-radius: 8px 0 0 8px;
-  text-align: center;
-  color: white;
-  font-family: monospace;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
   z-index: 10;
-  min-width: 200px;
+  font-family: monospace;
+  user-select: none;
 }
 
-#upgrade-panel h3 {
+/* The thin vertical tab on the left of the panel body. Always visible. */
+#upgrade-tab {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  cursor: pointer;
+  padding: 14px 7px;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #3498db;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  border-radius: 0px 4px 4px 0px;
+  transition: background-color 0.15s;
+}
+
+#upgrade-tab:hover {
+  background-color: rgba(52, 152, 219, 0.2);
+}
+
+/* The body with upgrade choices, hidden when minimized. */
+#upgrade-body {
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.85);
+  text-align: center;
+  color: white;
+  min-width: 210px;
+  max-width: 260px;
+}
+
+#upgrade-panel.minimized #upgrade-body {
+  display: none;
+}
+
+#upgrade-body h3 {
   margin: 0 0 15px 0;
   font-size: 14px;
   color: #3498db;
+}
+
+#upgrade-empty-msg {
+  font-size: 13px;
+  color: #95a5a6;
+  padding: 10px 0;
+  line-height: 1.5;
 }
 
 .upgrade-btn {

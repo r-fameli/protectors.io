@@ -14,7 +14,7 @@ import { renderTree, renderTreeHP } from './tree';
 import { renderBullet } from './bullet';
 import { renderExpOrb } from './exp-orb';
 import { renderMinimap } from './minimap';
-import { renderWeaponCooldowns, renderExpBar, renderDifficultyBar, updateUpgradePanel, resetUpgradePanelCache } from './hud';
+import { renderWeaponCooldowns, renderExpBar, renderDifficultyBar, updateUpgradePanel } from './hud';
 
 // ── Canvas setup ──────────────────────────────────────────
 
@@ -31,6 +31,7 @@ window.addEventListener('resize', debounce(40, setCanvasDimensions));
 
 let animationFrameRequestId: number;
 let showHitboxes = false;
+let prevHadPending = false;
 
 // ── Background ─────────────────────────────────────────────
 
@@ -61,15 +62,53 @@ function render() {
 
   const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs, threatLevel, threatProgress } = getCurrentState();
   if (me) {
-    // Show/hide upgrade panel
+    // Upgrade panel — tab toggle + content state
     const panel = document.getElementById('upgrade-panel');
-    if (panel) {
-      if (me.pendingUpgrades > 0) {
-        panel.classList.remove('hidden');
-        updateUpgradePanel(me.availableUpgrades || []);
+    const tab = document.getElementById('upgrade-tab');
+    const title = document.getElementById('upgrade-title');
+    const choices = document.getElementById('upgrade-choices');
+    const emptyMsg = document.getElementById('upgrade-empty-msg');
+    if (panel && tab && title && choices && emptyMsg) {
+      // Wire up tab click once
+      if (!tab.dataset.wired) {
+        tab.dataset.wired = '1';
+        tab.addEventListener('click', () => panel.classList.toggle('minimized'));
+      }
+
+      const hasPending = me.pendingUpgrades > 0;
+      const hasChoices = (me.availableUpgrades?.length || 0) > 0;
+
+      // Update tab text with pending count
+      tab.textContent = hasPending ? `Upgrades (${me.pendingUpgrades})` : 'Upgrades';
+
+      // Auto-minimize when all upgrades spent — do this BEFORE
+      // content update so the body is hidden before we touch it.
+      if (!hasPending && prevHadPending) {
+        panel.classList.add('minimized');
+      }
+      // Auto-unminimize when fresh upgrades arrive
+      if (hasPending && !prevHadPending) {
+        panel.classList.remove('minimized');
+      }
+      prevHadPending = hasPending;
+
+      // Populate choices or empty message
+      if (hasPending && hasChoices) {
+        choices.classList.remove('hidden');
+        emptyMsg.classList.add('hidden');
+        title.classList.remove('hidden');
+        title.textContent = 'Choose an upgrade:';
+        updateUpgradePanel(me.availableUpgrades!);
+      } else if (hasPending && !hasChoices) {
+        choices.classList.add('hidden');
+        emptyMsg.classList.remove('hidden');
+        title.classList.add('hidden');
+        emptyMsg.textContent = 'No upgrades available — all upgrades have been exhausted.';
       } else {
-        panel.classList.add('hidden');
-        resetUpgradePanelCache();
+        choices.classList.add('hidden');
+        emptyMsg.classList.remove('hidden');
+        title.classList.add('hidden');
+        emptyMsg.textContent = 'No upgrades available.';
       }
     }
     renderBackground();
