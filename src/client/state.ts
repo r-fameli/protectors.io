@@ -41,6 +41,7 @@ interface ServerUpdate {
   spiders: SpiderState[];
   arrows: ArrowState[];
   expOrbs: ExpOrbState[];
+  collectibles: CollectibleState[];
   threatLevel: number;
   threatProgress: number;
   speedMultiplier: number;
@@ -115,6 +116,14 @@ interface ArrowState {
   radius: number;
 }
 
+interface CollectibleState {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  hp: number;
+}
+
 interface GameState {
   me?: PlayerState;
   others?: PlayerState[];
@@ -126,6 +135,7 @@ interface GameState {
   spiders?: SpiderState[];
   arrows?: ArrowState[];
   expOrbs?: ExpOrbState[];
+  collectibles?: CollectibleState[];
   threatLevel?: number;
   threatProgress?: number;
   speedMultiplier?: number;
@@ -205,6 +215,7 @@ export function getCurrentState(): GameState {
       spiders: latestUpdate.spiders || [],
       arrows: latestUpdate.arrows || [],
       expOrbs: latestUpdate.expOrbs || [],
+      collectibles: latestUpdate.collectibles || [],
       threatLevel: latestUpdate.threatLevel,
       threatProgress: latestUpdate.threatProgress,
       speedMultiplier: latestUpdate.speedMultiplier,
@@ -224,6 +235,7 @@ export function getCurrentState(): GameState {
       spiders: next.spiders || [],
       arrows: next.arrows || [],
       expOrbs: next.expOrbs || [],
+      collectibles: next.collectibles || [],
       threatLevel: next.threatLevel,
       threatProgress: next.threatProgress,
       speedMultiplier: next.speedMultiplier,

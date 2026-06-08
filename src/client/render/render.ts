@@ -9,6 +9,7 @@ import { renderMob } from './mob';
 import { renderDeployable } from './deployable';
 import { renderCaltrop } from './caltrop';
 import { renderSpider } from './spider';
+import { renderCollectible } from './collectible';
 import { renderArrow } from './arrow';
 import { renderTree, renderTreeHP } from './tree';
 import { renderBullet } from './bullet';
@@ -60,7 +61,7 @@ function renderHitbox(me: RenderObject, object: RenderObject) {
 function render() {
   input.update();
 
-  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs, threatLevel, threatProgress, speedMultiplier } = getCurrentState();
+  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs, collectibles, threatLevel, threatProgress, speedMultiplier } = getCurrentState();
   if (me) {
     // Upgrade panel — tab toggle + content state
     const panel = document.getElementById('upgrade-panel');
@@ -137,6 +138,7 @@ function render() {
 
     forEachNearby(me, mobs, renderMob);
     forEachNearby(me, expOrbs, renderExpOrb);
+    forEachNearby(me, collectibles, renderCollectible);
 
     if (showHitboxes) {
       forEachNearby(me, trees, renderHitbox);
@@ -144,7 +146,7 @@ function render() {
       if (isNear(me, me)) renderHitbox(me, me);
     }
 
-    renderMinimap(me, others!, trees!, mobs || [], deployables || []);
+    renderMinimap(me, others!, trees!, mobs || [], deployables || [], collectibles);
     renderWeaponCooldowns(me);
     renderDifficultyBar(threatLevel, threatProgress);
     if (trees && trees.length > 0) {

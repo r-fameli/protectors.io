@@ -7,6 +7,7 @@ interface Collidable {
   y: number;
   radius?: number;
   damage?: number;
+  hp?: number;
   distanceTo: (obj: Collidable) => number;
   takeDamage?: (amount: number) => void;
 }
@@ -14,6 +15,7 @@ interface Collidable {
 interface CollisionResult {
   destroyedBullets: Collidable[];
   destroyedCaltrops: Collidable[];
+  collectedCollectibles: Collidable[];
 }
 
 function applyCollisions(
@@ -22,9 +24,11 @@ function applyCollisions(
   trees: Collidable[],
   mobs: Collidable[],
   caltrops: Collidable[],
+  collectibles: Collidable[],
 ): CollisionResult {
   const destroyedBullets: Collidable[] = [];
   const destroyedCaltrops: Collidable[] = [];
+  const collectedCollectibles: Collidable[] = [];
 
   // Bullet vs mobs
   for (let i = 0; i < bullets.length; i++) {
@@ -75,7 +79,21 @@ function applyCollisions(
     }
   }
 
-  return { destroyedBullets, destroyedCaltrops };
+  // Player vs collectibles — collect on overlap
+  if (collectibles) {
+    for (const col of collectibles) {
+      if (col.hp === undefined || col.hp <= 0) continue;
+      for (const player of players) {
+        if (col.distanceTo(player) <= (col.radius || 20) + Constants.PLAYER_RADIUS) {
+          collectedCollectibles.push(col);
+          col.takeDamage!(col.hp || 1);
+          break;
+        }
+      }
+    }
+  }
+
+  return { destroyedBullets, destroyedCaltrops, collectedCollectibles };
 }
 
 export default applyCollisions;

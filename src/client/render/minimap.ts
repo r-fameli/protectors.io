@@ -8,6 +8,7 @@ export function renderMinimap(
   trees: RenderObject[],
   mobs: RenderObject[],
   deployables?: RenderObject[],
+  collectibles?: RenderObject[],
 ) {
   const minimapSize = 150;
   const minimapX = context.canvas.width - minimapSize - 10;
@@ -69,6 +70,21 @@ export function renderMinimap(
         minimapX + d.x * scale,
         minimapY + d.y * scale,
         2, 0, 2 * Math.PI,
+      );
+      context.fill();
+    });
+  }
+
+  // Collectibles (only active ones)
+  if (collectibles) {
+    collectibles.forEach(c => {
+      if (c.hp === undefined || c.hp <= 0) return;
+      context.fillStyle = '#f1c40f';
+      context.beginPath();
+      context.arc(
+        minimapX + c.x * scale,
+        minimapY + c.y * scale,
+        3, 0, 2 * Math.PI,
       );
       context.fill();
     });

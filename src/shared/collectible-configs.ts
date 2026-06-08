@@ -1,0 +1,10 @@
+export const COLLECTIBLE_CONFIG = {
+  RADIUS: 20,
+  HP: 1,
+  XP: 80,
+  BASE_COUNT: 2,
+  PER_PLAYER: 1,
+  RESPAWN: 60, // seconds
+  MIN_DIST_FROM_TREE: 800,
+  MIN_DIST_FROM_EACH_OTHER: 400,
+};

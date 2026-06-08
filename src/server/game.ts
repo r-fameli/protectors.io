@@ -16,6 +16,8 @@ import Arrow from "./weapons/arrow";
 import Spider from "./weapons/spider";
 import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
+import Collectible from "./collectible";
+import { COLLECTIBLE_CONFIG } from "../shared/collectible-configs";
 import { BasicTurretConfig, getWeaponConfig } from "../shared/weapon-configs";
 import { HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import { TIME_PER_THRESHOLD } from "../shared/wave-configs";
@@ -40,6 +42,7 @@ class Game {
   deployables: (Turret | Springer | Spiderweb | Crossbow)[];
   caltrops: Caltrop[];
   expOrbs: ExpOrb[];
+  collectibles: Collectible[];
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
   waveManager: WaveManager;
@@ -58,6 +61,8 @@ class Game {
     this.spiders = [];
     this.arrows = [];
     this.expOrbs = [];
+    this.collectibles = [];
+    this.spawnCollectibles(COLLECTIBLE_CONFIG.BASE_COUNT);
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
     this.speedMultiplier = 1;
@@ -79,6 +84,16 @@ class Game {
     const x = Constants.MAP_SIZE * (0.25 + Math.random() * 0.5);
     const y = Constants.MAP_SIZE * (0.25 + Math.random() * 0.5);
     this.players[socket.id] = new Player(socket.id, username, x, y);
+  }
+
+  /** Spawn N collectibles with spacing. */
+  private spawnCollectibles(count: number): void {
+    const positions: { x: number; y: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      const pos = Collectible.randomPosition(positions);
+      positions.push(pos);
+      this.collectibles.push(new Collectible(`collectible_${i}`, pos.x, pos.y));
+    }
   }
 
   removePlayer(socket: import("socket.io").Socket) {
@@ -258,6 +273,10 @@ class Game {
       (foreman as Foreman).updateBehavior(dt, this.mobs);
     });
 
+    // Update collectibles — tick respawn timers, pass alive positions for spacing
+    const alivePositions = this.collectibles.filter(c => c.alive).map(c => ({ x: c.x, y: c.y }));
+    this.collectibles.forEach(c => c.update(dt, alivePositions));
+
     // Remove expired deployables
     this.deployables = this.deployables.filter(d => !d.update(dt));
     this.caltrops = this.caltrops.filter(c => !c.update(dt));
@@ -270,12 +289,13 @@ class Game {
     this.arrows = updateArrows(dt, this.mobs, this.arrows);
 
     // Apply collisions
-    const { destroyedBullets, destroyedCaltrops } = applyCollisions(
+    const { destroyedBullets, destroyedCaltrops, collectedCollectibles } = applyCollisions(
       Object.values(this.players),
       this.bullets,
       this.trees,
       this.mobs,
       this.caltrops,
+      this.collectibles,
     );
 
     // Remove mobs killed by bullets — drop exp orb at death location
@@ -284,6 +304,15 @@ class Game {
       this.expOrbs.push(new ExpOrb(`exp_${mob.id}`, mob.x, mob.y, mob.xpDrop));
     });
     this.mobs = this.mobs.filter(mob => mob.hp > 0);
+
+    // Collectibles collected by player overlap — drop XP orbs and start respawn timer
+    for (const col of collectedCollectibles) {
+      const c = this.collectibles.find(c2 => c2.id === col.id);
+      if (c) {
+        this.expOrbs.push(new ExpOrb(`exp_${c.id}_${Date.now()}`, c.x, c.y, c.xpDrop));
+        c.respawnTimer = COLLECTIBLE_CONFIG.RESPAWN;
+      }
+    }
     this.bullets = this.bullets.filter(
       (bullet) => !destroyedBullets.includes(bullet),
     );
@@ -293,7 +322,7 @@ class Game {
 
     // Exp orbs — attract toward nearest player and consume on contact
     const ATTRACT_RADIUS = 300;
-    const ATTRACT_SPEED = 200;
+    const ATTRACT_SPEED = 300;
 
     // Compute average level for catch-up bonus (underleveled players earn extra XP)
     const avgLevel = playerList.reduce((sum, p) => sum + p.level, 0) / playerList.length;
@@ -355,6 +384,9 @@ class Game {
     this.arrows = [];
     this.expOrbs = [];
     this.speedMultiplier = 1;
+    this.collectibles = [];
+    const playerCount = Object.keys(this.players).length;
+    this.spawnCollectibles(COLLECTIBLE_CONFIG.BASE_COUNT + playerCount * COLLECTIBLE_CONFIG.PER_PLAYER);
     this.waveManager.reset();
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
@@ -395,6 +427,7 @@ class Game {
       spiders: this.spiders.map((s) => s.serializeForUpdate()),
       arrows: this.arrows.map((a) => a.serializeForUpdate()),
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
+      collectibles: this.collectibles.map((c) => c.serializeForUpdate()),
       threatLevel: this.waveManager.getThreatLevel(),
       threatProgress: (this.waveManager.getTotalPlayerTime() % TIME_PER_THRESHOLD) / TIME_PER_THRESHOLD,
       speedMultiplier: this.speedMultiplier,
