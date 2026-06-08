@@ -3,8 +3,8 @@ import { TurretConfig } from "../../shared/weapon-configs";
 
 class Turret extends GameObject {
   type: string;
-  spawnTime: number;
   duration: number;
+  effectiveTime: number;
   radius: number;
   fireCooldown: number;
   attackRadius: number;
@@ -16,7 +16,7 @@ class Turret extends GameObject {
     super(id, x, y, dir, 0);
     this.type = 'turret';
     this.isMoving = false;
-    this.spawnTime = Date.now();
+    this.effectiveTime = 0;
     this.duration = config.DURATION;
     this.radius = config.RADIUS;
     this.fireCooldown = 0;
@@ -27,7 +27,8 @@ class Turret extends GameObject {
   }
 
   update(dt: number): boolean {
-    return Date.now() - this.spawnTime > this.duration;
+    this.effectiveTime += dt * 1000;
+    return this.effectiveTime > this.duration;
   }
 
   serializeForUpdate() {
@@ -36,7 +37,7 @@ class Turret extends GameObject {
       type: this.type,
       direction: this.direction,
       radius: this.radius,
-      remainingRatio: Math.max(0, 1 - (Date.now() - this.spawnTime) / this.duration),
+      remainingRatio: Math.max(0, 1 - this.effectiveTime / this.duration),
       aimDirection: this.aimDirection,
     };
   }

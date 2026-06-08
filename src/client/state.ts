@@ -43,6 +43,7 @@ interface ServerUpdate {
   expOrbs: ExpOrbState[];
   threatLevel: number;
   threatProgress: number;
+  speedMultiplier: number;
 }
 
 export type WeaponType = 'turret' | 'springer' | 'spiderweb' | 'crossbow';
@@ -127,6 +128,7 @@ interface GameState {
   expOrbs?: ExpOrbState[];
   threatLevel?: number;
   threatProgress?: number;
+  speedMultiplier?: number;
 }
 
 export interface ChatMessage {
@@ -205,6 +207,7 @@ export function getCurrentState(): GameState {
       expOrbs: latestUpdate.expOrbs || [],
       threatLevel: latestUpdate.threatLevel,
       threatProgress: latestUpdate.threatProgress,
+      speedMultiplier: latestUpdate.speedMultiplier,
     };
   } else {
     const baseUpdate = gameUpdates[base];
@@ -223,6 +226,7 @@ export function getCurrentState(): GameState {
       expOrbs: next.expOrbs || [],
       threatLevel: next.threatLevel,
       threatProgress: next.threatProgress,
+      speedMultiplier: next.speedMultiplier,
     };
   }
 }

@@ -3,8 +3,8 @@ import { CrossbowConfig } from "../../shared/weapon-configs";
 
 class Crossbow extends GameObject {
   type: string;
-  spawnTime: number;
   duration: number;
+  effectiveTime: number;
   radius: number;
   attackRadius: number;
   fireCooldown: number;
@@ -19,7 +19,7 @@ class Crossbow extends GameObject {
     super(id, x, y, dir, 0);
     this.type = 'crossbow';
     this.isMoving = false;
-    this.spawnTime = Date.now();
+    this.effectiveTime = 0;
     this.duration = CrossbowConfig.DURATION;
     this.radius = CrossbowConfig.RADIUS;
     this.attackRadius = CrossbowConfig.ATTACK_RADIUS;
@@ -32,7 +32,8 @@ class Crossbow extends GameObject {
   }
 
   update(dt: number): boolean {
-    return Date.now() - this.spawnTime > this.duration;
+    this.effectiveTime += dt * 1000;
+    return this.effectiveTime > this.duration;
   }
 
   serializeForUpdate() {
@@ -41,7 +42,7 @@ class Crossbow extends GameObject {
       type: this.type,
       direction: this.direction,
       radius: this.radius,
-      remainingRatio: Math.max(0, 1 - (Date.now() - this.spawnTime) / this.duration),
+      remainingRatio: Math.max(0, 1 - this.effectiveTime / this.duration),
       aimDirection: this.aimDirection,
     };
   }

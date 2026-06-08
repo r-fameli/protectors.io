@@ -43,6 +43,7 @@ class Game {
   lastUpdateTime: number;
   shouldSendUpdate: boolean;
   waveManager: WaveManager;
+  speedMultiplier: number;
   spiders: Spider[];
   arrows: Arrow[];
 
@@ -59,6 +60,7 @@ class Game {
     this.expOrbs = [];
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
+    this.speedMultiplier = 1;
     this.waveManager = new WaveManager();
     const center = Constants.MAP_SIZE / 2;
     this.waveManager.registerMobType('lumberjack', (id, x, y) => new Lumberjack(id, x, y, center, center));
@@ -175,7 +177,7 @@ class Game {
 
   update() {
     const now = Date.now();
-    const dt = (now - this.lastUpdateTime) / 1000;
+    const dt = (now - this.lastUpdateTime) / 1000 * this.speedMultiplier;
     this.lastUpdateTime = now;
 
     // Don't simulate when no players are connected
@@ -352,6 +354,7 @@ class Game {
     this.spiders = [];
     this.arrows = [];
     this.expOrbs = [];
+    this.speedMultiplier = 1;
     this.waveManager.reset();
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;
@@ -394,6 +397,7 @@ class Game {
       expOrbs: nearbyExpOrbs.map((e) => e.serializeForUpdate()),
       threatLevel: this.waveManager.getThreatLevel(),
       threatProgress: (this.waveManager.getTotalPlayerTime() % TIME_PER_THRESHOLD) / TIME_PER_THRESHOLD,
+      speedMultiplier: this.speedMultiplier,
     };
   }
 }

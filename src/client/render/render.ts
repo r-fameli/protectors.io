@@ -60,7 +60,7 @@ function renderHitbox(me: RenderObject, object: RenderObject) {
 function render() {
   input.update();
 
-  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs, threatLevel, threatProgress } = getCurrentState();
+  const { me, others, bullets, trees, mobs, deployables, caltrops, spiders, arrows, expOrbs, threatLevel, threatProgress, speedMultiplier } = getCurrentState();
   if (me) {
     // Upgrade panel — tab toggle + content state
     const panel = document.getElementById('upgrade-panel');
@@ -151,6 +151,15 @@ function render() {
       renderTreeHP(me, trees[0]);
     }
     renderExpBar(me);
+
+    // Fast mode indicator
+    if (speedMultiplier && speedMultiplier > 1) {
+      context.fillStyle = '#e74c3c';
+      context.font = 'bold 14px monospace';
+      context.textAlign = 'right';
+      context.textBaseline = 'bottom';
+      context.fillText('2x', canvas.width - 10, canvas.height - 10);
+    }
   }
 
   renderChatMessages();

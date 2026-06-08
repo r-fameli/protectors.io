@@ -3,8 +3,8 @@ import { SpiderwebConfig } from "../../shared/weapon-configs";
 
 class Spiderweb extends GameObject {
   type: string;
-  spawnTime: number;
   duration: number;
+  effectiveTime: number;
   radius: number;
   attackRadius: number;
   slowMultiplier: number;
@@ -18,7 +18,7 @@ class Spiderweb extends GameObject {
     super(id, x, y, 0, 0);
     this.type = 'spiderweb';
     this.isMoving = false;
-    this.spawnTime = Date.now();
+    this.effectiveTime = 0;
     this.duration = SpiderwebConfig.DURATION;
     this.radius = SpiderwebConfig.RADIUS;
     this.attackRadius = SpiderwebConfig.ATTACK_RADIUS;
@@ -29,7 +29,8 @@ class Spiderweb extends GameObject {
   }
 
   update(dt: number): boolean {
-    return Date.now() - this.spawnTime > this.duration;
+    this.effectiveTime += dt * 1000;
+    return this.effectiveTime > this.duration;
   }
 
   serializeForUpdate() {
@@ -37,7 +38,7 @@ class Spiderweb extends GameObject {
       ...super.serializeForUpdate(),
       type: this.type,
       radius: this.radius,
-      remainingRatio: Math.max(0, 1 - (Date.now() - this.spawnTime) / this.duration),
+      remainingRatio: Math.max(0, 1 - this.effectiveTime / this.duration),
     };
   }
 }

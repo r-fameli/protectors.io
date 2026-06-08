@@ -43,9 +43,23 @@ io.on('connection', socket => {
   });
 
   socket.on(Constants.MSG_TYPES.CHAT, (text: string) => {
+    const trimmed = text.trim();
+    // Allow player to specify /fastmode [int] (for game testing)
+    const fmMatch = trimmed.match(/^\/fastmode\s*(\d+)?$/);
+    if (fmMatch) {
+      if (fmMatch[1]) {
+        game.speedMultiplier = Math.max(1, Math.min(10, parseInt(fmMatch[1])));
+      } else {
+        game.speedMultiplier = game.speedMultiplier === 1 ? 2 : 1;
+      }
+      const label = game.speedMultiplier === 1 ? 'OFF' : `ON (${game.speedMultiplier}x)`;
+      const msg = { username: 'System', text: `Fast mode ${label}` };
+      Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, msg));
+      return;
+    }
     const player = game.players[socket.id];
-    if (player && text.trim()) {
-      const payload = { username: player.username, text: text.trim().slice(0, 200) };
+    if (player && trimmed) {
+      const payload = { username: player.username, text: trimmed.slice(0, 200) };
       Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, payload));
     }
   });

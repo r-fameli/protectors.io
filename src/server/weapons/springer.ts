@@ -3,8 +3,8 @@ import { SpringerConfig } from "../../shared/weapon-configs";
 
 class Springer extends GameObject {
   type: string;
-  spawnTime: number;
   duration: number;
+  effectiveTime: number;
   radius: number;
   attackRadius: number;
   caltropCooldown: number;
@@ -16,7 +16,7 @@ class Springer extends GameObject {
     super(id, x, y, 0, 0);
     this.type = 'springer';
     this.isMoving = false;
-    this.spawnTime = Date.now();
+    this.effectiveTime = 0;
     this.duration = SpringerConfig.DURATION;
     this.radius = SpringerConfig.RADIUS;
     this.attackRadius = SpringerConfig.ATTACK_RADIUS;
@@ -26,7 +26,8 @@ class Springer extends GameObject {
   }
 
   update(dt: number): boolean {
-    return Date.now() - this.spawnTime > this.duration;
+    this.effectiveTime += dt * 1000;
+    return this.effectiveTime > this.duration;
   }
 
   serializeForUpdate() {
@@ -34,7 +35,7 @@ class Springer extends GameObject {
       ...super.serializeForUpdate(),
       type: this.type,
       radius: this.radius,
-      remainingRatio: Math.max(0, 1 - (Date.now() - this.spawnTime) / this.duration),
+      remainingRatio: Math.max(0, 1 - this.effectiveTime / this.duration),
     };
   }
 }
