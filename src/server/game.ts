@@ -129,56 +129,13 @@ class Game {
     }
   }
 
-  /** Angles tried for ring placement, ordered priority (center first, then outward). */
   private static readonly PLACEMENT_ANGLES = [
-    0,                        // straight ahead
-    Math.PI / 8,              // 22.5° right
-    -Math.PI / 8,             // 22.5° left
-    Math.PI / 4,              // 45° right
-    -Math.PI / 4,             // 45° left
+    0,
+    Math.PI / 8,
+    -Math.PI / 8,
+    Math.PI / 4,
+    -Math.PI / 4,
   ];
-
-  private tryPlaceDeployable(
-    dt: number,
-    player: Player,
-    cd: () => number,
-    setCd: (v: number) => void,
-    incCounter: () => number,
-    config: { RADIUS: number; COOLDOWN: number; ID_PREFIX: string },
-    create: (id: string, x: number, y: number) => Turret | Springer | Spiderweb,
-    weaponType: string,
-  ) {
-    let cooldown = cd();
-    cooldown -= dt * 1000;
-    if (cooldown <= 0) {
-      const ringR = Constants.PLAYER_RADIUS + config.RADIUS + 10;
-
-      for (const angleOffset of Game.PLACEMENT_ANGLES) {
-        const px = player.x + Math.cos(player.direction + angleOffset) * ringR;
-        const py = player.y + Math.sin(player.direction + angleOffset) * ringR;
-
-        const blocked = this.deployables.some(d => {
-          const dx = d.x - px;
-          const dy = d.y - py;
-          return (dx * dx + dy * dy) < (config.RADIUS * 2) ** 2;
-        });
-
-        if (!blocked) {
-          cooldown += config.COOLDOWN;
-          const id = incCounter();
-          const d = create(`${player.id}_${config.ID_PREFIX}_${id}`, px, py);
-          applyWeaponState(d, weaponType, player);
-          this.deployables.push(d);
-          setCd(cooldown);
-          return;
-        }
-      }
-
-      // All candidates blocked — retry next frame
-      cooldown = 0;
-    }
-    setCd(cooldown);
-  }
 
   private createDeployable(type: string, id: string, x: number, y: number, dir: number): Turret | Springer | Spiderweb | Crossbow {
     switch (type) {
@@ -217,21 +174,47 @@ class Game {
       (bullet) => !bulletsToRemove.includes(bullet),
     );
 
-    // Update players — place deployables on cooldown (only owned weapons)
+    // Update players — round-robin deploy queue
     Object.keys(this.sockets).forEach((playerID) => {
       const player = this.players[playerID];
       player.update(dt);
 
-      for (const weaponType of Object.keys(player.weaponSlots)) {
-        const slot = player.weaponSlots[weaponType];
-        this.tryPlaceDeployable(dt, player,
-          () => slot.cooldown,
-          v => { slot.cooldown = v; },
-          () => ++slot.idCounter,
-          getWeaponConfig(weaponType),
-          (id, x, y) => this.createDeployable(weaponType, id, x, y, player.direction),
-          weaponType,
-        );
+      if (player.deployQueue.length === 0) return;
+
+      player.deployCooldown -= dt * 1000;
+      if (player.deployCooldown <= 0) {
+        const weaponType = player.deployQueue[player.deployIndex];
+        const config = getWeaponConfig(weaponType);
+
+        const offset = Constants.PLAYER_RADIUS + config.RADIUS + 10;
+
+        for (const angleOffset of Game.PLACEMENT_ANGLES) {
+          const px = player.x + Math.cos(player.direction + angleOffset) * offset;
+          const py = player.y + Math.sin(player.direction + angleOffset) * offset;
+
+          const blocked = this.deployables.some(d => {
+            const dx = d.x - px;
+            const dy = d.y - py;
+            return (dx * dx + dy * dy) < (config.RADIUS * 2) ** 2;
+          });
+
+          if (!blocked) {
+            const seq = player.nextDeployId(weaponType);
+            const id = `${player.id}_${config.ID_PREFIX}_${seq}`;
+            const d = this.createDeployable(weaponType, id, px, py, player.direction);
+            applyWeaponState(d, weaponType, player);
+            this.deployables.push(d);
+            // Advance queue and set cooldown to the NEXT weapon's CD
+            player.deployIndex = (player.deployIndex + 1) % player.deployQueue.length;
+            const nextWeapon = player.deployQueue[player.deployIndex];
+            player.deployCooldown = getWeaponConfig(nextWeapon).COOLDOWN;
+            break;
+          }
+        }
+        // All candidates blocked — keep cooldown at 0 to retry next frame
+        if (player.deployCooldown <= 0) {
+          player.deployCooldown = 0;
+        }
       }
     });
 

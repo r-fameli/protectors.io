@@ -32,11 +32,6 @@ export interface UpgradeChoice {
   level: number;
 }
 
-interface WeaponSlot {
-  cooldown: number;
-  idCounter: number;
-}
-
 /** Discriminated per-weapon stats storage. */
 type WeaponStatsUnion =
   | { type: 'turret'; level: number; stats: TurretStats }
@@ -48,7 +43,13 @@ class Player extends GameObject {
   username: string;
   hp: number;
   score: number;
-  weaponSlots: Record<string, WeaponSlot>;
+  /** Ordered queue of owned weapon types. Round-robin deploy index. */
+  deployQueue: string[];
+  deployIndex: number;
+  /** Shared deploy cooldown timer (ms remaining). */
+  deployCooldown: number;
+  /** Per-weapon id counters for naming deployed instances. */
+  private weaponCounters: Record<string, number>;
   private weaponEntries: Record<string, WeaponStatsUnion>;
   exp: number;
   totalExpEarned: number;
@@ -64,7 +65,10 @@ class Player extends GameObject {
     this.username = username;
     this.hp = Constants.PLAYER_MAX_HP;
     this.score = 0;
-    this.weaponSlots = {};
+    this.deployQueue = [];
+    this.deployIndex = 0;
+    this.deployCooldown = 0;
+    this.weaponCounters = {};
     this.weaponEntries = {};
     this.exp = 0;
     this.totalExpEarned = 0;
@@ -143,12 +147,13 @@ class Player extends GameObject {
     return false;
   }
 
-  /** Add a new weapon type (first time). Creates slot + base stats. */
+  /** Add a new weapon type (first time). Appends to deploy queue. */
   private acquireWeapon(type: string): void {
     if (this.weaponEntries[type]) return; // already owned
-    if (Object.keys(this.weaponSlots).length >= 4) return; // slots full
+    if (this.deployQueue.length >= 4) return; // slots full
 
-    this.weaponSlots[type] = { cooldown: 0, idCounter: 0 };
+    this.deployQueue.push(type);
+    this.weaponCounters[type] = 0;
     const factory = BASE_STATS_FACTORIES[type];
     if (!factory) return;
 
@@ -176,10 +181,10 @@ class Player extends GameObject {
     if (this.cachedUpgrades) return this.cachedUpgrades;
 
     const choices: UpgradeChoice[] = [];
-    const slotCount = Object.keys(this.weaponSlots).length;
+    const weaponCount = this.deployQueue.length;
 
     // 1. Acquire options (weapons not owned, slots < 4)
-    if (slotCount < 4) {
+    if (weaponCount < 4) {
       for (const type of ['springer', 'spiderweb', 'crossbow']) {
         if (this.weaponEntries[type]) continue;
         choices.push({
@@ -218,12 +223,18 @@ class Player extends GameObject {
     return this.cachedUpgrades;
   }
 
+  /** Increment and return a unique sequence number for a deployed weapon instance. */
+  nextDeployId(weaponType: string): number {
+    this.weaponCounters[weaponType] = (this.weaponCounters[weaponType] || 0) + 1;
+    return this.weaponCounters[weaponType];
+  }
+
   // ── Serialization ──
 
   getWeapons(): WeaponState[] {
-    return Object.keys(this.weaponEntries).map(type => ({
+    return this.deployQueue.map(type => ({
       type: type as WeaponType,
-      cooldown: this.weaponSlots[type]?.cooldown || 0,
+      cooldown: type === this.deployQueue[this.deployIndex] ? this.deployCooldown : 0,
       maxCooldown: getWeaponConfig(type).COOLDOWN,
     }));
   }
