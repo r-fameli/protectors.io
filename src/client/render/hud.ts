@@ -141,19 +141,30 @@ export function updateUpgradePanel(availableUpgrades: UpgradeChoice[]) {
   container.innerHTML = '';
   availableUpgrades.forEach(choice => {
     const btn = document.createElement('button');
-    btn.className = 'upgrade-btn';
+    const isPlayer = choice.weaponType === 'player';
+    btn.className = isPlayer ? 'upgrade-btn upgrade-btn-player' : 'upgrade-btn';
     const isAcquire = choice.upgradeKey.startsWith('acquire_');
     const weaponName = choice.weaponType.charAt(0).toUpperCase() + choice.weaponType.slice(1);
 
-    // Line 1: Weapon Name Lvl. N (bold, white)
+    // Line 1: upgrade name + level
     const labelSpan = document.createElement('span');
     labelSpan.className = 'upgrade-label';
-    labelSpan.textContent = `${weaponName} Lvl. ${choice.level}`;
+    if (isPlayer) {
+      labelSpan.textContent = `${choice.label} Lvl. ${choice.level}`;
+    } else {
+      labelSpan.textContent = `${weaponName} Lvl. ${choice.level}`;
+    }
 
-    // Line 2: upgrade title (dimmer) — "Faster Turret" or "New Weapon" for acquire
+    // Line 2: subtitle — upgrade title, "New Weapon", or blank for player upgrades
     const subSpan = document.createElement('span');
     subSpan.className = 'upgrade-subtitle';
-    subSpan.textContent = isAcquire ? 'New Weapon' : choice.label;
+    if (isPlayer) {
+      subSpan.textContent = 'Player Upgrade';
+    } else if (isAcquire) {
+      subSpan.textContent = 'New Weapon';
+    } else {
+      subSpan.textContent = choice.label;
+    }
 
     // Line 3: delta description
     const descSpan = document.createElement('span');

@@ -23,6 +23,7 @@ import { HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import { TIME_PER_THRESHOLD } from "../shared/wave-configs";
 import applyCollisions from "./collisions";
 import WaveManager from "./systems/wave-manager";
+
 import {
   applySpiderwebSlow,
   updateSpiders,
@@ -147,6 +148,36 @@ class Game {
     }
   }
 
+  /** Apply global player progression multipliers (range, damage) to a new deployable. */
+  private applyPlayerMultipliers(d: Turret | Springer | Spiderweb | Crossbow, type: string, player: Player): void {
+    switch (type) {
+      case 'turret': {
+        const t = d as Turret;
+        t.attackRadius = Math.round(t.attackRadius * player.rangeMultiplier);
+        t.damageMultiplier *= player.damageMultiplier;
+        break;
+      }
+      case 'springer': {
+        const s = d as Springer;
+        s.attackRadius = Math.round(s.attackRadius * player.rangeMultiplier);
+        s.damageMultiplier *= player.damageMultiplier;
+        break;
+      }
+      case 'spiderweb': {
+        const w = d as Spiderweb;
+        w.attackRadius = Math.round(w.attackRadius * player.rangeMultiplier);
+        w.damageMultiplier *= player.damageMultiplier;
+        break;
+      }
+      case 'crossbow': {
+        const c = d as Crossbow;
+        c.attackRadius = Math.round(c.attackRadius * player.rangeMultiplier);
+        c.damageMultiplier *= player.damageMultiplier;
+        break;
+      }
+    }
+  }
+
   update() {
     const now = Date.now();
     const dt = (now - this.lastUpdateTime) / 1000 * this.speedMultiplier;
@@ -181,7 +212,7 @@ class Game {
 
       if (player.deployQueue.length === 0) return;
 
-      player.deployCooldown -= dt * 1000;
+      player.deployCooldown -= dt * 1000 * player.deployCdMultiplier;
       if (player.deployCooldown <= 0) {
         const weaponType = player.deployQueue[player.deployIndex];
         const config = getWeaponConfig(weaponType);
@@ -202,16 +233,24 @@ class Game {
             const seq = player.nextDeployId(weaponType);
             const id = `${player.id}_${config.ID_PREFIX}_${seq}`;
             const d = this.createDeployable(weaponType, id, px, py, player.direction);
+            // Apply weapon-specific upgrade stats
             applyWeaponState(d, weaponType, player);
+            // Apply global player progression multipliers
+            this.applyPlayerMultipliers(d, weaponType, player);
+            // Apply fortify duration
+            (d as any).duration = Math.round((d as any).duration * player.fortifyMultiplier);
             this.deployables.push(d);
-            // Advance queue and set cooldown to the NEXT weapon's CD
-            player.deployIndex = (player.deployIndex + 1) % player.deployQueue.length;
+
+            // Double deploy — chance to not advance the queue
+            const doubleProcs = Math.random() < player.doubleDeployChance;
+            if (!doubleProcs) {
+              player.deployIndex = (player.deployIndex + 1) % player.deployQueue.length;
+            }
             const nextWeapon = player.deployQueue[player.deployIndex];
             player.deployCooldown = getWeaponConfig(nextWeapon).COOLDOWN;
             break;
           }
         }
-        // All candidates blocked — keep cooldown at 0 to retry next frame
         if (player.deployCooldown <= 0) {
           player.deployCooldown = 0;
         }
@@ -304,7 +343,7 @@ class Game {
     );
 
     // Exp orbs — attract toward nearest player and consume on contact
-    const ATTRACT_RADIUS = 300;
+    const ATTRACT_BASE_RADIUS = 300;
     const ATTRACT_SPEED = 300;
 
     // Compute average level for catch-up bonus (underleveled players earn extra XP)
@@ -313,11 +352,12 @@ class Game {
     const consumedOrbs: ExpOrb[] = [];
     this.expOrbs.forEach(orb => {
       let closest: Player | null = null;
-      let closestDist = ATTRACT_RADIUS;
+      let closestDist = 0;
 
       for (const player of playerList) {
         const dist = orb.distanceTo(player);
-        if (dist < closestDist) {
+        const playerRange = ATTRACT_BASE_RADIUS * player.pickupRangeMultiplier;
+        if (dist < playerRange && (closest === null || dist < closestDist)) {
           closestDist = dist;
           closest = player;
         }
@@ -400,8 +440,8 @@ class Game {
     );
     return {
       t: Date.now(),
-      me: player.serializeForUpdate(),
-      others: nearbyPlayers.map((p) => p.serializeForUpdate()),
+      me: player.serializeForUpdate(this.waveManager.getThreatLevel()),
+      others: nearbyPlayers.map((p) => p.serializeForUpdate(this.waveManager.getThreatLevel())),
       bullets: nearbyBullets.map((b) => b.serializeForUpdate()),
       trees: this.trees.map((p) => p.serializeForUpdate()),
       mobs: nearbyMobs.map((m) => m.serializeForUpdate()),

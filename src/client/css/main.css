@@ -156,6 +156,14 @@ button:focus {
   background-color: #3498db;
 }
 
+.upgrade-btn-player {
+  border-color: #27ae60;
+}
+
+.upgrade-btn-player:hover {
+  background-color: #27ae60;
+}
+
 .upgrade-label {
   display: block;
   font-weight: bold;

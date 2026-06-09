@@ -12,6 +12,16 @@ import {
   SpiderwebStats,
   CrossbowStats,
 } from '../shared/weapon-upgrades';
+import {
+  PLAYER_UPGRADES,
+  SPEED_MULTS,
+  CD_MULTS,
+  RANGE_MULTS,
+  DAMAGE_MULTS,
+  FORTIFY_MULTS,
+  PICKUP_RADIUS_MULTS,
+  DOUBLE_DEPLOY_CHANCES,
+} from '../shared/player-upgrades';
 
 const EXP_BASE_THRESHOLD = 100;
 
@@ -25,7 +35,7 @@ interface WeaponState {
 
 /** A choice presented to the player on level-up. */
 export interface UpgradeChoice {
-  upgradeKey: string;  // 'upgrade_turret' or 'acquire_springer'
+  upgradeKey: string;  // 'upgrade_turret' or 'acquire_springer' or 'player_movementSpeed_2'
   label: string;
   description: string;
   weaponType: string;
@@ -51,6 +61,10 @@ class Player extends GameObject {
   /** Per-weapon id counters for naming deployed instances. */
   private weaponCounters: Record<string, number>;
   private weaponEntries: Record<string, WeaponStatsUnion>;
+
+  /** Player progression upgrade levels (0 = unacquired). */
+  playerUpgrades: Record<string, number> = {};
+
   exp: number;
   totalExpEarned: number;
   level: number;
@@ -82,12 +96,10 @@ class Player extends GameObject {
 
   // ── Weapon state accessors ──
 
-  /** Get the raw weapon entry (type + level + stats) for a given weapon type. */
   getWeaponEntry(type: string): WeaponStatsUnion | undefined {
     return this.weaponEntries[type];
   }
 
-  /** Get turret stats with correct type narrowing. */
   getTurretStats(): TurretStats | undefined {
     const e = this.weaponEntries['turret'];
     return e?.type === 'turret' ? e.stats : undefined;
@@ -108,6 +120,52 @@ class Player extends GameObject {
     return e?.type === 'crossbow' ? e.stats : undefined;
   }
 
+  // ── Player progression multipliers ──
+
+  get speedMultiplier(): number {
+    return SPEED_MULTS[this.playerUpgrades['player_movementSpeed'] || 0];
+  }
+
+  get deployCdMultiplier(): number {
+    return CD_MULTS[this.playerUpgrades['player_cooldownReduction'] || 0];
+  }
+
+  get rangeMultiplier(): number {
+    return RANGE_MULTS[this.playerUpgrades['player_biggerRange'] || 0];
+  }
+
+  get damageMultiplier(): number {
+    return DAMAGE_MULTS[this.playerUpgrades['player_damageUp'] || 0];
+  }
+
+  get maxSlots(): number {
+    return 4 + (this.playerUpgrades['player_extraSlot'] || 0);
+  }
+
+  get fortifyMultiplier(): number {
+    return FORTIFY_MULTS[this.playerUpgrades['player_fortify'] || 0];
+  }
+
+  get pickupRangeMultiplier(): number {
+    return PICKUP_RADIUS_MULTS[this.playerUpgrades['player_pickupRadius'] || 0];
+  }
+
+  get doubleDeployChance(): number {
+    return DOUBLE_DEPLOY_CHANCES[this.playerUpgrades['player_doubleDeploy'] || 0];
+  }
+
+  update(dt: number) {
+    if (this.isMoving) {
+      const xDir = Math.cos(this.direction);
+      const yDir = Math.sin(this.direction);
+      this.x += dt * Constants.PLAYER_SPEED * this.speedMultiplier * xDir;
+      this.y += dt * Constants.PLAYER_SPEED * this.speedMultiplier * yDir;
+    }
+    this.score += dt * Constants.SCORE_PER_SECOND;
+    this.x = Math.max(0, Math.min(Constants.MAP_SIZE, this.x));
+    this.y = Math.max(0, Math.min(Constants.MAP_SIZE, this.y));
+  }
+
   // ── Upgrade system ──
 
   addExp(amount: number, avgLevel?: number) {
@@ -121,14 +179,14 @@ class Player extends GameObject {
       this.level++;
       this.nextLevelExp = Math.floor(EXP_BASE_THRESHOLD * Math.pow(1.08, this.level - 1));
       this.pendingUpgrades++;
-      this.cachedUpgrades = null; // regenerate choices on next request
+      this.cachedUpgrades = null;
     }
   }
 
   /** Handle an upgrade choice from the client. */
   applyUpgrade(upgradeKey: string): boolean {
     if (this.pendingUpgrades <= 0) return false;
-    this.cachedUpgrades = null; // choices will change after this
+    this.cachedUpgrades = null;
 
     if (upgradeKey.startsWith('acquire_')) {
       const weaponType = upgradeKey.slice('acquire_'.length);
@@ -144,13 +202,28 @@ class Player extends GameObject {
       return true;
     }
 
+    if (upgradeKey.startsWith('player_')) {
+      const upgradeKeyName = upgradeKey;
+      this.applyPlayerUpgrade(upgradeKeyName);
+      this.pendingUpgrades--;
+      return true;
+    }
+
     return false;
+  }
+
+  /** Apply a player upgrade. Key format: `player_{upgradeKey}_{level}`. Stores highest level earned. */
+  private applyPlayerUpgrade(key: string): void {
+    const parts = key.split('_');
+    const level = parseInt(parts[parts.length - 1], 10);
+    const baseKey = parts.slice(0, -1).join('_');
+    this.playerUpgrades[baseKey] = Math.max(this.playerUpgrades[baseKey] || 0, level);
   }
 
   /** Add a new weapon type (first time). Appends to deploy queue. */
   private acquireWeapon(type: string): void {
-    if (this.weaponEntries[type]) return; // already owned
-    if (this.deployQueue.length >= 4) return; // slots full
+    if (this.weaponEntries[type]) return;
+    if (this.deployQueue.length >= this.maxSlots) return;
 
     this.deployQueue.push(type);
     this.weaponCounters[type] = 0;
@@ -169,22 +242,22 @@ class Player extends GameObject {
 
     const tree = WEAPON_UPGRADE_TREES[type];
     if (!tree) return;
-    const def = tree[entry.level - 1]; // level 1 → tree[0] (first upgrade), level 2 → tree[1]
+    const def = tree[entry.level - 1];
     if (!def) return;
 
     def.apply(entry.stats);
     entry.level++;
   }
 
-  /** Build list of up to 3 upgrade choices for the client. Cached until upgrade applied. */
-  getAvailableUpgrades(): UpgradeChoice[] {
+  /** Build list of up to 3 upgrade choices for the client. */
+  getAvailableUpgrades(threatLevel?: number): UpgradeChoice[] {
     if (this.cachedUpgrades) return this.cachedUpgrades;
 
     const choices: UpgradeChoice[] = [];
     const weaponCount = this.deployQueue.length;
 
-    // 1. Acquire options (weapons not owned, slots < 4)
-    if (weaponCount < 4) {
+    // 1. Acquire weapon options
+    if (weaponCount < this.maxSlots) {
       for (const type of ['springer', 'spiderweb', 'crossbow']) {
         if (this.weaponEntries[type]) continue;
         choices.push({
@@ -202,7 +275,7 @@ class Player extends GameObject {
       if (entry.level >= MAX_UPGRADE_LEVEL) continue;
       const tree = WEAPON_UPGRADE_TREES[type];
       if (!tree) continue;
-      const def = tree[entry.level - 1]; // level 1 → tree[0] (first upgrade)
+      const def = tree[entry.level - 1];
       if (!def) continue;
 
       choices.push({
@@ -210,7 +283,26 @@ class Player extends GameObject {
         label: def.label,
         description: def.formatDescription(entry.stats),
         weaponType: type,
-        level: entry.level + 1, // target level after upgrade
+        level: entry.level + 1,
+      });
+    }
+
+    // 3. Player progression upgrades (filtered by threat level and progress level)
+    const tl = threatLevel || 1;
+    for (const def of PLAYER_UPGRADES) {
+      const baseKey = `player_${def.upgradeKey}`;
+      // Skip if already have this or a higher level of this upgrade
+      if ((this.playerUpgrades[baseKey] || 0) >= def.level) continue;
+      if (tl < def.minThreat) continue;
+      // Only show the next available level (skip if def.level is not exactly current+1)
+      if ((this.playerUpgrades[baseKey] || 0) !== def.level - 1) continue;
+
+      choices.push({
+        upgradeKey: `${baseKey}_${def.level}`,
+        label: def.label,
+        description: def.description,
+        weaponType: 'player',
+        level: def.level,
       });
     }
 
@@ -239,7 +331,7 @@ class Player extends GameObject {
     }));
   }
 
-  serializeForUpdate() {
+  serializeForUpdate(threatLevel?: number) {
     return {
       ...super.serializeForUpdate(),
       username: this.username,
@@ -250,7 +342,7 @@ class Player extends GameObject {
       level: this.level,
       nextLevelExp: this.nextLevelExp,
       pendingUpgrades: this.pendingUpgrades,
-      availableUpgrades: this.pendingUpgrades > 0 ? this.getAvailableUpgrades() : [],
+      availableUpgrades: this.pendingUpgrades > 0 ? this.getAvailableUpgrades(threatLevel) : [],
     };
   }
 }
