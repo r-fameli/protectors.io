@@ -20,7 +20,7 @@ import {
   DAMAGE_MULTS,
   FORTIFY_MULTS,
   PICKUP_RADIUS_MULTS,
-  DOUBLE_DEPLOY_CHANCES,
+  CASCADE_CHANCES,
 } from '../shared/player-upgrades';
 
 const EXP_BASE_THRESHOLD = 100;
@@ -61,6 +61,8 @@ class Player extends GameObject {
   /** Per-weapon id counters for naming deployed instances. */
   private weaponCounters: Record<string, number>;
   private weaponEntries: Record<string, WeaponStatsUnion>;
+  /** Bonus cooldowns from Cascade. Per weapon type, independent timers (ms each), max MAX_BONUS_COOLDOWNS. */
+  bonusCooldowns: Record<string, number[]> = {};
 
   /** Player progression upgrade levels (0 = unacquired). */
   playerUpgrades: Record<string, number> = {};
@@ -150,8 +152,8 @@ class Player extends GameObject {
     return PICKUP_RADIUS_MULTS[this.playerUpgrades['player_pickupRadius'] || 0];
   }
 
-  get doubleDeployChance(): number {
-    return DOUBLE_DEPLOY_CHANCES[this.playerUpgrades['player_doubleDeploy'] || 0];
+  get cascadeChance(): number {
+    return CASCADE_CHANCES[this.playerUpgrades['player_cascade'] || 0];
   }
 
   update(dt: number) {
@@ -232,6 +234,32 @@ class Player extends GameObject {
 
     const entry: WeaponStatsUnion = { type: type as WeaponType, level: 1, stats: factory() } as WeaponStatsUnion;
     this.weaponEntries[type] = entry;
+  }
+
+  /** Max out all upgrades (weapon + player). Called by /upgrademe cheat. */
+  maxOutAllUpgrades(): void {
+    // Acquire all weapons
+    for (const w of ['springer', 'spiderweb', 'crossbow']) {
+      if (!this.weaponEntries[w]) this.acquireWeapon(w);
+    }
+    // Max all weapon upgrades
+    for (const w of Object.keys(this.weaponEntries)) {
+      while (this.weaponEntries[w] && (this.weaponEntries[w] as any).level < MAX_UPGRADE_LEVEL) {
+        this.upgradeWeapon(w);
+      }
+    }
+    // Max all player progression upgrades
+    const playerMaxLevels: Record<string, number> = {
+      movementSpeed: 3, cooldownReduction: 3, biggerRange: 3, damageUp: 3,
+      extraSlot: 1, fortify: 3, pickupRadius: 2, cascade: 4,
+    };
+    for (const [key, maxLvl] of Object.entries(playerMaxLevels)) {
+      const baseKey = `player_${key}`;
+      this.playerUpgrades[baseKey] = maxLvl;
+    }
+    // Clear pending upgrades
+    this.pendingUpgrades = 0;
+    this.cachedUpgrades = null;
   }
 
   /** Apply the next upgrade for an owned weapon type. */
@@ -328,6 +356,7 @@ class Player extends GameObject {
       type: type as WeaponType,
       cooldown: type === this.deployQueue[this.deployIndex] ? this.deployCooldown : 0,
       maxCooldown: getWeaponConfig(type).COOLDOWN,
+      bonusCooldowns: this.bonusCooldowns[type] || [],
     }));
   }
 

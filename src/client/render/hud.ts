@@ -16,22 +16,65 @@ const WEAPON_SPRITES: Record<WeaponType, string> = {
   crossbow: 'weapons/crossbow.png',
 };
 
-function renderCooldownBox(x: number, weapon: WeaponState) {
-  context.fillStyle = HUD_BG;
-  context.fillRect(x, PADDING, BOX_SIZE, BOX_SIZE);
+const BAR_GAP = 2;
 
-  const progress = Math.max(0, Math.min(1, 1 - weapon.cooldown / weapon.maxCooldown));
-  if (progress > 0) {
-    const tintHeight = BOX_SIZE * progress;
-    context.fillStyle = COOLDOWN_TINT;
-    context.fillRect(x, PADDING + BOX_SIZE - tintHeight, BOX_SIZE, tintHeight);
+function renderCooldownBox(x: number, weapon: WeaponState) {
+  const boxTop = PADDING;
+
+  // Collect all active cooldowns for this weapon
+  const bars: { progress: number }[] = [];
+  const mainProg = Math.max(0, Math.min(1, 1 - weapon.cooldown / weapon.maxCooldown));
+  if (mainProg > 0) bars.push({ progress: mainProg });
+
+  const bonus: number[] = weapon.bonusCooldowns || [];
+  for (const b of bonus) {
+    const p = Math.max(0, Math.min(1, 1 - b / weapon.maxCooldown));
+    if (p > 0) bars.push({ progress: p });
   }
 
+  const n = bars.length;
+
+  // Background
+  context.fillStyle = HUD_BG;
+  context.fillRect(x, boxTop, BOX_SIZE, BOX_SIZE);
+
+  if (n === 0) {
+    // No active cooldown — just show sprite
+    const sprite = WEAPON_SPRITES[weapon.type];
+    if (sprite) {
+      const img = getAsset(sprite);
+      context.drawImage(img, x + (BOX_SIZE - IMAGE_SIZE) / 2, boxTop + (BOX_SIZE - IMAGE_SIZE) / 2, IMAGE_SIZE, IMAGE_SIZE);
+    }
+    return;
+  }
+
+  // N vertical bars, each barWidth = (BOX_SIZE - (n-1) * BAR_GAP) / n
+  const totalGap = (n - 1) * BAR_GAP;
+  const barWidth = (BOX_SIZE - totalGap) / n;
+
+  for (let i = 0; i < n; i++) {
+    const barX = x + i * (barWidth + BAR_GAP);
+    const fillH = BOX_SIZE * bars[i].progress;
+
+    // Bar background track
+    context.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    context.fillRect(barX, boxTop, barWidth, BOX_SIZE);
+
+    // Bar fill (grows from bottom)
+    context.fillStyle = COOLDOWN_TINT;
+    context.fillRect(barX, boxTop + BOX_SIZE - fillH, barWidth, fillH);
+  }
+
+  // Weapon sprite centered
   const sprite = WEAPON_SPRITES[weapon.type];
   if (sprite) {
     const img = getAsset(sprite);
-    const imgOffset = (BOX_SIZE - IMAGE_SIZE) / 2;
-    context.drawImage(img, x + imgOffset, PADDING + imgOffset, IMAGE_SIZE, IMAGE_SIZE);
+    const cx = x + BOX_SIZE / 2;
+    const cy = boxTop + BOX_SIZE / 2;
+    context.save();
+    context.globalAlpha = 0.7;
+    context.drawImage(img, cx - IMAGE_SIZE / 2, cy - IMAGE_SIZE / 2, IMAGE_SIZE, IMAGE_SIZE);
+    context.restore();
   }
 }
 

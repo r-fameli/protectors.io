@@ -154,24 +154,38 @@ export const PLAYER_UPGRADES: PlayerUpgradeDef[] = [
     minThreat: 3,
   },
 
-  // ── Double Deploy ────────────────────────────────────────
+  // ── Cascade ────────────────────────────────────────────
   {
-    upgradeKey: "doubleDeploy",
-    label: "Echo",
-    description: "10% chance to place two weapons",
+    upgradeKey: "cascade",
+    label: "Cascade",
+    description: "10% chance to trigger a bonus weapon cooldown on deploy",
     level: 1,
+    minThreat: 2,
+  },
+  {
+    upgradeKey: "cascade",
+    label: "Cascade II",
+    description: "20% chance to trigger a bonus weapon cooldown on deploy",
+    level: 2,
     minThreat: 4,
   },
   {
-    upgradeKey: "doubleDeploy",
-    label: "Double Time",
-    description: "20% chance to place two weapons",
-    level: 2,
+    upgradeKey: "cascade",
+    label: "Cascade III",
+    description: "30% chance to trigger a bonus weapon cooldown on deploy",
+    level: 3,
     minThreat: 6,
+  },
+  {
+    upgradeKey: "cascade",
+    label: "Cascade IV",
+    description: "40% chance to trigger a bonus weapon cooldown on deploy",
+    level: 4,
+    minThreat: 8,
   },
 ];
 
-/** Max levels per upgrade key (without 'player_' prefix — add prefix for playerUpgrades lookup). */
+/** Max levels per upgrade key (without 'player_' prefix). */
 export const PLAYER_UPGRADE_MAX_LEVELS: Record<string, number> = {
   movementSpeed: 3,
   cooldownReduction: 3,
@@ -180,7 +194,7 @@ export const PLAYER_UPGRADE_MAX_LEVELS: Record<string, number> = {
   extraSlot: 1,
   fortify: 3,
   pickupRadius: 2,
-  doubleDeploy: 2,
+  cascade: 4,
 };
 
 /** Stat tables: index = upgrade level, value = effect magnitude (level 0 = no upgrade). */
@@ -191,4 +205,8 @@ export const RANGE_MULTS = [1, 1.08, 1.15, 1.25];
 export const DAMAGE_MULTS = [1, 1.1, 1.2, 1.35];
 export const FORTIFY_MULTS = [1, 1.25, 1.5, 2];
 export const PICKUP_RADIUS_MULTS = [1, 1.5, 2, 3];
-export const DOUBLE_DEPLOY_CHANCES = [0, 0.1, 0.2];
+
+export const CASCADE_CHANCES = [0, 0.10, 0.20, 0.30, 0.40];
+
+/** Max parallel bonus cooldowns per weapon type from Cascade. */
+export const MAX_BONUS_COOLDOWNS = 2;

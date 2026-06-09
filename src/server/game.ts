@@ -18,6 +18,7 @@ import Caltrop from "./weapons/caltrop";
 import ExpOrb from "./exp-orb";
 import Collectible from "./collectible";
 import { COLLECTIBLE_CONFIG } from "../shared/collectible-configs";
+import { MAX_BONUS_COOLDOWNS } from "../shared/player-upgrades";
 import { BasicTurretConfig, getWeaponConfig } from "../shared/weapon-configs";
 import { HARVESTER as HARVESTER_CONFIG } from "../shared/mob-configs";
 import { TIME_PER_THRESHOLD } from "../shared/wave-configs";
@@ -138,6 +139,35 @@ class Game {
     -Math.PI / 4,
   ];
 
+  /** Try to place a weapon. Returns true on success. */
+  private tryPlaceWeapon(player: Player, weaponType: string): boolean {
+    const config = getWeaponConfig(weaponType);
+    const offset = Constants.PLAYER_RADIUS + config.RADIUS + 10;
+
+    for (const angleOffset of Game.PLACEMENT_ANGLES) {
+      const px = player.x + Math.cos(player.direction + angleOffset) * offset;
+      const py = player.y + Math.sin(player.direction + angleOffset) * offset;
+
+      const blocked = this.deployables.some(d => {
+        const dx = d.x - px;
+        const dy = d.y - py;
+        return (dx * dx + dy * dy) < (config.RADIUS * 2) ** 2;
+      });
+
+      if (!blocked) {
+        const seq = player.nextDeployId(weaponType);
+        const id = `${player.id}_${config.ID_PREFIX}_${seq}`;
+        const d = this.createDeployable(weaponType, id, px, py, player.direction);
+        applyWeaponState(d, weaponType, player);
+        this.applyPlayerMultipliers(d, weaponType, player);
+        (d as any).duration = Math.round((d as any).duration * player.fortifyMultiplier);
+        this.deployables.push(d);
+        return true;
+      }
+    }
+    return false;
+  }
+
   private createDeployable(type: string, id: string, x: number, y: number, dir: number): Turret | Springer | Spiderweb | Crossbow {
     switch (type) {
       case 'turret': return new Turret(id, x, y, dir, BasicTurretConfig);
@@ -205,54 +235,51 @@ class Game {
       (bullet) => !bulletsToRemove.includes(bullet),
     );
 
-    // Update players — round-robin deploy queue
+    // Update players — round-robin deploy queue + bonus cooldowns
     Object.keys(this.sockets).forEach((playerID) => {
       const player = this.players[playerID];
       player.update(dt);
 
       if (player.deployQueue.length === 0) return;
 
+      // ── Main round-robin queue ──
       player.deployCooldown -= dt * 1000 * player.deployCdMultiplier;
       if (player.deployCooldown <= 0) {
         const weaponType = player.deployQueue[player.deployIndex];
-        const config = getWeaponConfig(weaponType);
+        const placed = this.tryPlaceWeapon(player, weaponType);
 
-        const offset = Constants.PLAYER_RADIUS + config.RADIUS + 10;
-
-        for (const angleOffset of Game.PLACEMENT_ANGLES) {
-          const px = player.x + Math.cos(player.direction + angleOffset) * offset;
-          const py = player.y + Math.sin(player.direction + angleOffset) * offset;
-
-          const blocked = this.deployables.some(d => {
-            const dx = d.x - px;
-            const dy = d.y - py;
-            return (dx * dx + dy * dy) < (config.RADIUS * 2) ** 2;
-          });
-
-          if (!blocked) {
-            const seq = player.nextDeployId(weaponType);
-            const id = `${player.id}_${config.ID_PREFIX}_${seq}`;
-            const d = this.createDeployable(weaponType, id, px, py, player.direction);
-            // Apply weapon-specific upgrade stats
-            applyWeaponState(d, weaponType, player);
-            // Apply global player progression multipliers
-            this.applyPlayerMultipliers(d, weaponType, player);
-            // Apply fortify duration
-            (d as any).duration = Math.round((d as any).duration * player.fortifyMultiplier);
-            this.deployables.push(d);
-
-            // Double deploy — chance to not advance the queue
-            const doubleProcs = Math.random() < player.doubleDeployChance;
-            if (!doubleProcs) {
-              player.deployIndex = (player.deployIndex + 1) % player.deployQueue.length;
+        if (placed) {
+          // Cascade — chance to start a bonus cooldown on a random owned weapon
+          if (Math.random() < player.cascadeChance) {
+            const candidates = player.deployQueue.filter(w =>
+              (player.bonusCooldowns[w] || []).length < MAX_BONUS_COOLDOWNS
+            );
+            if (candidates.length > 0) {
+              const pick = candidates[Math.floor(Math.random() * candidates.length)];
+              if (!player.bonusCooldowns[pick]) player.bonusCooldowns[pick] = [];
+              player.bonusCooldowns[pick].push(getWeaponConfig(pick).COOLDOWN);
             }
-            const nextWeapon = player.deployQueue[player.deployIndex];
-            player.deployCooldown = getWeaponConfig(nextWeapon).COOLDOWN;
-            break;
           }
+
+          player.deployIndex = (player.deployIndex + 1) % player.deployQueue.length;
+          const nextWeapon = player.deployQueue[player.deployIndex];
+          player.deployCooldown = getWeaponConfig(nextWeapon).COOLDOWN;
+        } else {
+          player.deployCooldown = 0; // retry next frame
         }
-        if (player.deployCooldown <= 0) {
-          player.deployCooldown = 0;
+      }
+
+      // ── Bonus cooldowns (Cascade) — tick and deploy independently ──
+      for (const wtype of player.deployQueue) {
+        const timers = player.bonusCooldowns[wtype];
+        if (!timers || timers.length === 0) continue;
+
+        for (let i = timers.length - 1; i >= 0; i--) {
+          timers[i] -= dt * 1000 * player.deployCdMultiplier;
+          if (timers[i] <= 0) {
+            timers.splice(i, 1);
+            this.tryPlaceWeapon(player, wtype);
+          }
         }
       }
     });
@@ -343,7 +370,7 @@ class Game {
     );
 
     // Exp orbs — attract toward nearest player and consume on contact
-    const ATTRACT_BASE_RADIUS = 300;
+    const ATTRACT_BASE_RADIUS = 200;
     const ATTRACT_SPEED = 300;
 
     // Compute average level for catch-up bonus (underleveled players earn extra XP)

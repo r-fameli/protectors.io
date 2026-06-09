@@ -15,7 +15,7 @@ export const LUMBERJACK: MobConfig = {
 };
 
 export const CHAINSAWER: MobConfig = {
-    BASE_HEALTH: 250,
+    BASE_HEALTH: 200,
     BASE_SPEED: 35,
     BASE_RADIUS: 30,
     BASE_SPAWN_INTERVAL: 10,

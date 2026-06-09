@@ -14,8 +14,8 @@ export interface TurretConfig extends BaseWeaponConfig {
 }
 
 export const BasicTurretConfig: TurretConfig = {
-  COOLDOWN: 3000,
-  DURATION: 40000,
+  COOLDOWN: 2000,
+  DURATION: 20000,
   RADIUS: 20,
   ID_PREFIX: "turret",
   ATTACK_RADIUS: 200,
@@ -24,8 +24,8 @@ export const BasicTurretConfig: TurretConfig = {
 };
 
 export const SpringerConfig = {
-  COOLDOWN: 4000,
-  DURATION: 30000,
+  COOLDOWN: 2500,
+  DURATION: 20000,
   RADIUS: 20,
   ID_PREFIX: "springer",
   ATTACK_RADIUS: 180,
@@ -33,40 +33,50 @@ export const SpringerConfig = {
   CALTROP_DAMAGE: 70,
 };
 
-export const SpiderwebConfig = {
-    COOLDOWN: 6000,
-    DURATION: 30000,
-    RADIUS: 20,
-    ID_PREFIX: 'spiderweb',
-    ATTACK_RADIUS: 200,
-    SLOW_MULTIPLIER: 0.4,
-    SPIDER_DAMAGE: 25,
-    SPIDER_ATTACK_INTERVAL: 1500,
-    SPIDER_SPEED: 100,
+export const CrossbowConfig = {
+  COOLDOWN: 2700,
+  DURATION: 30000,
+  RADIUS: 20,
+  ID_PREFIX: "crossbow",
+  ATTACK_RADIUS: 250,
+  FIRE_COOLDOWN: 5000,
+  DAMAGE: 75,
+  ARROW_SPEED: 600,
+  ARROW_MAX_TRAVEL: 350,
 };
 
-export const CrossbowConfig = {
-    COOLDOWN: 4500,
-    DURATION: 40000,
-    RADIUS: 20,
-    ID_PREFIX: 'crossbow',
-    ATTACK_RADIUS: 250,
-    FIRE_COOLDOWN: 5000,
-    DAMAGE: 75,
-    ARROW_SPEED: 600,
-    ARROW_MAX_TRAVEL: 350,
+export const SpiderwebConfig = {
+  COOLDOWN: 3200,
+  DURATION: 25000,
+  RADIUS: 20,
+  ID_PREFIX: "spiderweb",
+  ATTACK_RADIUS: 200,
+  SLOW_MULTIPLIER: 0.4,
+  SPIDER_DAMAGE: 25,
+  SPIDER_ATTACK_INTERVAL: 1500,
+  SPIDER_SPEED: 100,
 };
 
 /**
  * Get base weapon config by type string. Returns the common fields
  * (COOLDOWN, DURATION, RADIUS, ID_PREFIX) needed for placement logic.
  */
-export function getWeaponConfig(type: string): { COOLDOWN: number; DURATION: number; RADIUS: number; ID_PREFIX: string } {
+export function getWeaponConfig(type: string): {
+  COOLDOWN: number;
+  DURATION: number;
+  RADIUS: number;
+  ID_PREFIX: string;
+} {
   switch (type) {
-    case 'turret': return BasicTurretConfig;
-    case 'springer': return SpringerConfig;
-    case 'spiderweb': return SpiderwebConfig;
-    case 'crossbow': return CrossbowConfig;
-    default: throw new Error(`Unknown weapon type: ${type}`);
+    case "turret":
+      return BasicTurretConfig;
+    case "springer":
+      return SpringerConfig;
+    case "spiderweb":
+      return SpiderwebConfig;
+    case "crossbow":
+      return CrossbowConfig;
+    default:
+      throw new Error(`Unknown weapon type: ${type}`);
   }
 }

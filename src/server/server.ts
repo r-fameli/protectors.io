@@ -44,6 +44,16 @@ io.on('connection', socket => {
 
   socket.on(Constants.MSG_TYPES.CHAT, (text: string) => {
     const trimmed = text.trim();
+    const player = game.players[socket.id];
+
+    // Cheat: max out all upgrades for the calling player
+    if (trimmed === '/upgrademe' && player) {
+      player.maxOutAllUpgrades();
+      const msg = { username: 'System', text: 'All upgrades maxed!' };
+      Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, msg));
+      return;
+    }
+
     // Allow player to specify /fastmode [int] (for game testing)
     const fmMatch = trimmed.match(/^\/fastmode\s*(\d+)?$/);
     if (fmMatch) {
@@ -57,7 +67,6 @@ io.on('connection', socket => {
       Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, msg));
       return;
     }
-    const player = game.players[socket.id];
     if (player && trimmed) {
       const payload = { username: player.username, text: trimmed.slice(0, 200) };
       Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, payload));
