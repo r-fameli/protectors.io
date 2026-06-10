@@ -53,13 +53,8 @@ class Player extends GameObject {
   username: string;
   hp: number;
   score: number;
-  /** Ordered queue of owned weapon types. Round-robin deploy index. */
-  deployQueue: string[];
-  deployIndex: number;
-  /** Shared deploy cooldown timer (ms remaining). */
-  deployCooldown: number;
-  /** Per-weapon id counters for naming deployed instances. */
-  private weaponCounters: Record<string, number>;
+  /** Per-weapon independent cooldown slots. Key = weapon type. */
+  weaponSlots: Record<string, { cooldown: number; idCounter: number }> = {};
   private weaponEntries: Record<string, WeaponStatsUnion>;
   /** Bonus cooldowns from Cascade. Per weapon type, independent timers (ms each), max MAX_BONUS_COOLDOWNS. */
   bonusCooldowns: Record<string, number[]> = {};
@@ -81,10 +76,7 @@ class Player extends GameObject {
     this.username = username;
     this.hp = Constants.PLAYER_MAX_HP;
     this.score = 0;
-    this.deployQueue = [];
-    this.deployIndex = 0;
-    this.deployCooldown = 0;
-    this.weaponCounters = {};
+    this.weaponSlots = {};
     this.weaponEntries = {};
     this.exp = 0;
     this.totalExpEarned = 0;
@@ -222,13 +214,12 @@ class Player extends GameObject {
     this.playerUpgrades[baseKey] = Math.max(this.playerUpgrades[baseKey] || 0, level);
   }
 
-  /** Add a new weapon type (first time). Appends to deploy queue. */
+  /** Add a new weapon type (first time). Creates an independent cooldown slot. */
   private acquireWeapon(type: string): void {
-    if (this.weaponEntries[type]) return;
-    if (this.deployQueue.length >= this.maxSlots) return;
+    if (this.weaponSlots[type]) return;
+    if (Object.keys(this.weaponSlots).length >= this.maxSlots) return;
 
-    this.deployQueue.push(type);
-    this.weaponCounters[type] = 0;
+    this.weaponSlots[type] = { cooldown: 0, idCounter: 0 };
     const factory = BASE_STATS_FACTORIES[type];
     if (!factory) return;
 
@@ -282,7 +273,7 @@ class Player extends GameObject {
     if (this.cachedUpgrades) return this.cachedUpgrades;
 
     const choices: UpgradeChoice[] = [];
-    const weaponCount = this.deployQueue.length;
+    const weaponCount = Object.keys(this.weaponSlots).length;
 
     // 1. Acquire weapon options
     if (weaponCount < this.maxSlots) {
@@ -345,16 +336,18 @@ class Player extends GameObject {
 
   /** Increment and return a unique sequence number for a deployed weapon instance. */
   nextDeployId(weaponType: string): number {
-    this.weaponCounters[weaponType] = (this.weaponCounters[weaponType] || 0) + 1;
-    return this.weaponCounters[weaponType];
+    const slot = this.weaponSlots[weaponType];
+    if (!slot) return 0;
+    slot.idCounter++;
+    return slot.idCounter;
   }
 
   // ── Serialization ──
 
   getWeapons(): WeaponState[] {
-    return this.deployQueue.map(type => ({
+    return Object.keys(this.weaponSlots).map(type => ({
       type: type as WeaponType,
-      cooldown: type === this.deployQueue[this.deployIndex] ? this.deployCooldown : 0,
+      cooldown: this.weaponSlots[type].cooldown,
       maxCooldown: getWeaponConfig(type).COOLDOWN,
       bonusCooldowns: this.bonusCooldowns[type] || [],
     }));

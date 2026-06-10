@@ -158,28 +158,28 @@ export const PLAYER_UPGRADES: PlayerUpgradeDef[] = [
   {
     upgradeKey: "cascade",
     label: "Cascade",
-    description: "10% chance to trigger a bonus weapon cooldown on deploy",
+    description: "5% chance to trigger a bonus weapon cooldown on deploy",
     level: 1,
     minThreat: 2,
   },
   {
     upgradeKey: "cascade",
     label: "Cascade II",
-    description: "20% chance to trigger a bonus weapon cooldown on deploy",
+    description: "10% chance to trigger a bonus weapon cooldown on deploy",
     level: 2,
     minThreat: 4,
   },
   {
     upgradeKey: "cascade",
     label: "Cascade III",
-    description: "30% chance to trigger a bonus weapon cooldown on deploy",
+    description: "15% chance to trigger a bonus weapon cooldown on deploy",
     level: 3,
     minThreat: 6,
   },
   {
     upgradeKey: "cascade",
     label: "Cascade IV",
-    description: "40% chance to trigger a bonus weapon cooldown on deploy",
+    description: "22% chance to trigger a bonus weapon cooldown on deploy",
     level: 4,
     minThreat: 8,
   },
@@ -206,7 +206,7 @@ export const DAMAGE_MULTS = [1, 1.1, 1.2, 1.35];
 export const FORTIFY_MULTS = [1, 1.25, 1.5, 2];
 export const PICKUP_RADIUS_MULTS = [1, 1.5, 2, 3];
 
-export const CASCADE_CHANCES = [0, 0.10, 0.20, 0.30, 0.40];
+export const CASCADE_CHANCES = [0, 0.05, 0.10, 0.15, 0.22];
 
 /** Max parallel bonus cooldowns per weapon type from Cascade. */
 export const MAX_BONUS_COOLDOWNS = 2;

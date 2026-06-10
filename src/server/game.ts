@@ -235,42 +235,44 @@ class Game {
       (bullet) => !bulletsToRemove.includes(bullet),
     );
 
-    // Update players — round-robin deploy queue + bonus cooldowns
+    // Update players — independent per-weapon cooldowns + cascade bonus cooldowns
     Object.keys(this.sockets).forEach((playerID) => {
       const player = this.players[playerID];
       player.update(dt);
 
-      if (player.deployQueue.length === 0) return;
+      const ownedTypes = Object.keys(player.weaponSlots);
+      if (ownedTypes.length === 0) return;
 
-      // ── Main round-robin queue ──
-      player.deployCooldown -= dt * 1000 * player.deployCdMultiplier;
-      if (player.deployCooldown <= 0) {
-        const weaponType = player.deployQueue[player.deployIndex];
-        const placed = this.tryPlaceWeapon(player, weaponType);
+      // ── Independent per-weapon cooldowns ──
+      for (const wtype of ownedTypes) {
+        const slot = player.weaponSlots[wtype];
+        slot.cooldown -= dt * 1000 * player.deployCdMultiplier;
 
-        if (placed) {
-          // Cascade — chance to start a bonus cooldown on a random owned weapon
-          if (Math.random() < player.cascadeChance) {
-            const candidates = player.deployQueue.filter(w =>
-              (player.bonusCooldowns[w] || []).length < MAX_BONUS_COOLDOWNS
-            );
-            if (candidates.length > 0) {
-              const pick = candidates[Math.floor(Math.random() * candidates.length)];
-              if (!player.bonusCooldowns[pick]) player.bonusCooldowns[pick] = [];
-              player.bonusCooldowns[pick].push(getWeaponConfig(pick).COOLDOWN);
+        if (slot.cooldown <= 0) {
+          const placed = this.tryPlaceWeapon(player, wtype);
+
+          if (placed) {
+            slot.cooldown = getWeaponConfig(wtype).COOLDOWN;
+
+            // Cascade — chance to start a bonus cooldown on a random owned weapon
+            if (Math.random() < player.cascadeChance) {
+              const candidates = ownedTypes.filter(w =>
+                (player.bonusCooldowns[w] || []).length < MAX_BONUS_COOLDOWNS
+              );
+              if (candidates.length > 0) {
+                const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                if (!player.bonusCooldowns[pick]) player.bonusCooldowns[pick] = [];
+                player.bonusCooldowns[pick].push(getWeaponConfig(pick).COOLDOWN);
+              }
             }
+          } else {
+            slot.cooldown = 0; // retry next frame
           }
-
-          player.deployIndex = (player.deployIndex + 1) % player.deployQueue.length;
-          const nextWeapon = player.deployQueue[player.deployIndex];
-          player.deployCooldown = getWeaponConfig(nextWeapon).COOLDOWN;
-        } else {
-          player.deployCooldown = 0; // retry next frame
         }
       }
 
       // ── Bonus cooldowns (Cascade) — tick and deploy independently ──
-      for (const wtype of player.deployQueue) {
+      for (const wtype of ownedTypes) {
         const timers = player.bonusCooldowns[wtype];
         if (!timers || timers.length === 0) continue;
 

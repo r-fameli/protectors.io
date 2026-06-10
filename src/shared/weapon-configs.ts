@@ -14,7 +14,7 @@ export interface TurretConfig extends BaseWeaponConfig {
 }
 
 export const BasicTurretConfig: TurretConfig = {
-  COOLDOWN: 2000,
+  COOLDOWN: 2500,
   DURATION: 20000,
   RADIUS: 20,
   ID_PREFIX: "turret",
@@ -24,7 +24,7 @@ export const BasicTurretConfig: TurretConfig = {
 };
 
 export const SpringerConfig = {
-  COOLDOWN: 2500,
+  COOLDOWN: 4000,
   DURATION: 20000,
   RADIUS: 20,
   ID_PREFIX: "springer",
@@ -34,7 +34,7 @@ export const SpringerConfig = {
 };
 
 export const CrossbowConfig = {
-  COOLDOWN: 2700,
+  COOLDOWN: 4500,
   DURATION: 30000,
   RADIUS: 20,
   ID_PREFIX: "crossbow",
@@ -46,7 +46,7 @@ export const CrossbowConfig = {
 };
 
 export const SpiderwebConfig = {
-  COOLDOWN: 3200,
+  COOLDOWN: 5500,
   DURATION: 25000,
   RADIUS: 20,
   ID_PREFIX: "spiderweb",
