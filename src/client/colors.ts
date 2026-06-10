@@ -26,6 +26,7 @@ export const CANVAS_WHITE = 'white';
 export const CANVAS_BLUE = 'blue';
 export const CANVAS_GREEN = 'green';
 export const CANVAS_YELLOW = 'yellow';
+export const CANVAS_RED = 'red';
 
 export const SHADE_COLOR = 'rgba(0, 0, 0, 0.20)';
 

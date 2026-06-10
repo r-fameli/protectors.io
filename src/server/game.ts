@@ -64,7 +64,7 @@ class Game {
     this.arrows = [];
     this.expOrbs = [];
     this.collectibles = [];
-    this.spawnCollectibles(COLLECTIBLE_CONFIG.BASE_COUNT);
+    this.spawnCollectibles();
     this.lastUpdateTime = Date.now();
     this.shouldSendUpdate = false;
     this.speedMultiplier = 1;
@@ -88,13 +88,20 @@ class Game {
     this.players[socket.id] = new Player(socket.id, username, x, y);
   }
 
-  /** Spawn N collectibles with spacing. */
-  private spawnCollectibles(count: number): void {
+  /** Spawn XP collectibles + tree orbs with spacing. */
+  private spawnCollectibles(): void {
     const positions: { x: number; y: number }[] = [];
-    for (let i = 0; i < count; i++) {
+    const playerCount = Object.keys(this.players).length;
+    const xpCount = COLLECTIBLE_CONFIG.XP_BASE_COUNT + playerCount * COLLECTIBLE_CONFIG.XP_PER_PLAYER;
+    for (let i = 0; i < xpCount; i++) {
       const pos = Collectible.randomPosition(positions);
       positions.push(pos);
-      this.collectibles.push(new Collectible(`collectible_${i}`, pos.x, pos.y));
+      this.collectibles.push(new Collectible(`collectible_xp_${i}`, pos.x, pos.y, 'xp'));
+    }
+    for (let i = 0; i < COLLECTIBLE_CONFIG.TREE_ORB_BASE_COUNT; i++) {
+      const pos = Collectible.randomPosition(positions, COLLECTIBLE_CONFIG.TREE_ORB_RADIUS);
+      positions.push(pos);
+      this.collectibles.push(new Collectible(`collectible_tree_${i}`, pos.x, pos.y, 'treeorb'));
     }
   }
 
@@ -324,9 +331,20 @@ class Game {
       (foreman as Foreman).updateBehavior(dt, this.mobs);
     });
 
-    // Update collectibles — tick respawn timers, pass alive positions for spacing
+    // Update collectibles — tick respawn timers, move transiting tree orbs, pass alive positions for spacing
     const alivePositions = this.collectibles.filter(c => c.alive).map(c => ({ x: c.x, y: c.y }));
     this.collectibles.forEach(c => c.update(dt, alivePositions));
+
+    // Tree orbs that arrived at the tree — heal the tree and start respawn
+    for (const c of this.collectibles) {
+      if (c.variant === 'treeorb' && c.hasArrivedAtTree) {
+        if (this.trees.length > 0) {
+          this.trees[0].healOrIncrease(c.healAmount, 20);
+        }
+        c.respawnTimer = COLLECTIBLE_CONFIG.TREE_ORB_RESPAWN;
+        c.endTransit();
+      }
+    }
 
     // Remove expired deployables
     this.deployables = this.deployables.filter(d => !d.update(dt));
@@ -356,12 +374,15 @@ class Game {
     });
     this.mobs = this.mobs.filter(mob => mob.hp > 0);
 
-    // Collectibles collected by player overlap — drop XP orbs and start respawn timer
+    // Collectibles collected by player overlap
     for (const col of collectedCollectibles) {
       const c = this.collectibles.find(c2 => c2.id === col.id);
-      if (c) {
+      if (!c) continue;
+      if (c.variant === 'treeorb') {
+        c.startTransit();
+      } else {
         this.expOrbs.push(new ExpOrb(`exp_${c.id}_${Date.now()}`, c.x, c.y, c.xpDrop));
-        c.respawnTimer = COLLECTIBLE_CONFIG.RESPAWN;
+        c.respawnTimer = COLLECTIBLE_CONFIG.XP_RESPAWN;
       }
     }
     this.bullets = this.bullets.filter(
@@ -372,8 +393,8 @@ class Game {
     );
 
     // Exp orbs — attract toward nearest player and consume on contact
-    const ATTRACT_BASE_RADIUS = 200;
-    const ATTRACT_SPEED = 300;
+    const ATTRACT_BASE_RADIUS = 150;
+    const ATTRACT_SPEED = 500;
 
     // Compute average level for catch-up bonus (underleveled players earn extra XP)
     const avgLevel = playerList.reduce((sum, p) => sum + p.level, 0) / playerList.length;
@@ -437,8 +458,7 @@ class Game {
     this.expOrbs = [];
     this.speedMultiplier = 1;
     this.collectibles = [];
-    const playerCount = Object.keys(this.players).length;
-    this.spawnCollectibles(COLLECTIBLE_CONFIG.BASE_COUNT + playerCount * COLLECTIBLE_CONFIG.PER_PLAYER);
+    this.spawnCollectibles();
     this.waveManager.reset();
     this.trees = [new Tree('tree', Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2)];
     this.shouldSendUpdate = false;

@@ -5,13 +5,13 @@
  * More players → threat rises faster → natural player-count scaling.
  * No XP edge cases (hoarding, drop-off gaps).
  */
-export const TIME_PER_THRESHOLD = 150;
+export const TIME_PER_THRESHOLD = 160;
 
 /** Minimum seconds between sequential wave events (prevents stacking). */
 export const MIN_WAVE_INTERVAL = 45;
 
 /** Per-threat-level HP multiplier. threatLevel 3 = +20% HP. */
-export const HP_SCALE_PER_THREAT = 0.07;
+export const HP_SCALE_PER_THREAT = 0.06;
 
 /** Per-threat-level speed multiplier. */
 export const SPEED_SCALE_PER_THREAT = 0.02;

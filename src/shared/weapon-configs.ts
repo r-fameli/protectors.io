@@ -24,7 +24,7 @@ export const BasicTurretConfig: TurretConfig = {
 };
 
 export const SpringerConfig = {
-  COOLDOWN: 4000,
+  COOLDOWN: 5000,
   DURATION: 20000,
   RADIUS: 20,
   ID_PREFIX: "springer",
@@ -34,7 +34,7 @@ export const SpringerConfig = {
 };
 
 export const CrossbowConfig = {
-  COOLDOWN: 4500,
+  COOLDOWN: 6000,
   DURATION: 30000,
   RADIUS: 20,
   ID_PREFIX: "crossbow",
@@ -46,7 +46,7 @@ export const CrossbowConfig = {
 };
 
 export const SpiderwebConfig = {
-  COOLDOWN: 5500,
+  COOLDOWN: 7000,
   DURATION: 25000,
   RADIUS: 20,
   ID_PREFIX: "spiderweb",

@@ -17,6 +17,16 @@ class Tree extends GameObject {
     this.hp -= amount;
   }
 
+  /** Heal HP. If already at max, increase max HP instead. */
+  healOrIncrease(amount: number, overflowBonus: number): void {
+    if (this.hp < this.maxHp) {
+      this.hp = Math.min(this.hp + amount, this.maxHp);
+    } else {
+      this.maxHp += overflowBonus;
+      this.hp += overflowBonus;
+    }
+  }
+
   serializeForUpdate() {
     return {
       ...super.serializeForUpdate(),

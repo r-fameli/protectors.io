@@ -20,6 +20,8 @@ export interface RenderObject {
   aimDirection?: number;
   mobType?: string;
   type?: string;
+  variant?: string;
+  isTransiting?: boolean;
   buffed?: boolean;
   buffRingActive?: boolean;
 }

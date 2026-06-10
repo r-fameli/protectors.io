@@ -1,6 +1,6 @@
 import { context } from './common';
 import { MAP_SIZE, RenderObject } from './common';
-import { CANVAS_BLACK, CANVAS_WHITE, CANVAS_BLUE, CANVAS_GREEN, CANVAS_YELLOW, MINIMAP_TURRET } from '../colors';
+import { CANVAS_BLACK, CANVAS_WHITE, CANVAS_BLUE, CANVAS_GREEN, CANVAS_YELLOW, CANVAS_RED, MINIMAP_TURRET } from '../colors';
 
 export function renderMinimap(
   me: RenderObject,
@@ -50,7 +50,7 @@ export function renderMinimap(
   // Mobs
   if (mobs) {
     mobs.forEach(mob => {
-      context.fillStyle = CANVAS_YELLOW;
+      context.fillStyle = CANVAS_RED;
       context.beginPath();
       context.arc(
         minimapX + mob.x * scale,
@@ -79,12 +79,12 @@ export function renderMinimap(
   if (collectibles) {
     collectibles.forEach(c => {
       if (c.hp === undefined || c.hp <= 0) return;
-      context.fillStyle = '#f1c40f';
+      context.fillStyle = CANVAS_YELLOW;
       context.beginPath();
       context.arc(
         minimapX + c.x * scale,
         minimapY + c.y * scale,
-        3, 0, 2 * Math.PI,
+        2, 0, 2 * Math.PI,
       );
       context.fill();
     });

@@ -123,6 +123,8 @@ interface CollectibleState {
   y: number;
   radius: number;
   hp: number;
+  variant: string;
+  isTransiting: boolean;
 }
 
 interface GameState {

@@ -84,7 +84,7 @@ function applyCollisions(
     for (const col of collectibles) {
       if (col.hp === undefined || col.hp <= 0) continue;
       for (const player of players) {
-        if (col.distanceTo(player) <= (col.radius || 20) + Constants.PLAYER_RADIUS) {
+        if (col.distanceTo(player) <= (col.radius || 20) + Constants.PLAYER_RADIUS + 30) {
           collectedCollectibles.push(col);
           col.takeDamage!(col.hp || 1);
           break;

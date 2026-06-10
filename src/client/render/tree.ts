@@ -10,7 +10,7 @@ export function renderTree(me: RenderObject, tree: RenderObject) {
 
   // Shade circle around tree
   context.beginPath();
-  context.arc(canvasX, canvasY, treeR * 3, 0, 2 * Math.PI);
+  context.arc(canvasX, canvasY, treeR * 4, 0, 2 * Math.PI);
   context.fillStyle = SHADE_COLOR;
   context.fill();
 
