@@ -54,6 +54,16 @@ io.on('connection', socket => {
       return;
     }
 
+    // Cheat: set threat level (for testing)
+    const threatMatch = trimmed.match(/^\/threat\s+(\d+)$/);
+    if (threatMatch && player) {
+      game.waveManager.setThreatLevel(parseInt(threatMatch[1]));
+      const tl = game.waveManager.getThreatLevel();
+      const msg = { username: 'System', text: `Threat level set to ${tl}` };
+      Object.values(game.sockets).forEach(s => s.emit(Constants.MSG_TYPES.CHAT, msg));
+      return;
+    }
+
     // Allow player to specify /fastmode [int] (for game testing)
     const fmMatch = trimmed.match(/^\/fastmode\s*(\d+)?$/);
     if (fmMatch) {

@@ -88,6 +88,12 @@ class WaveManager {
     return this._threatLevel;
   }
 
+  /** Set threat level to an arbitrary value (for testing via /threat command). */
+  setThreatLevel(target: number): void {
+    this.totalPlayerTime = Math.max(0, (target - 1)) * TIME_PER_THRESHOLD;
+    this._threatLevel = 1 + Math.floor(this.totalPlayerTime / TIME_PER_THRESHOLD);
+  }
+
   /** Total player-seconds accumulated this game (sum of dt per connected player). */
   getTotalPlayerTime(): number {
     return this.totalPlayerTime;
