@@ -184,7 +184,7 @@ class WaveManager {
   }
 
   /** Mob HP/speed scale by threat level. HP rounded for display; speed kept as float. */
-  private applyThreatScaling(mob: Mob): void {
+  applyThreatScaling(mob: Mob): void {
     const hpMult = 1 + (this._threatLevel - 1) * HP_SCALE_PER_THREAT;
     const spdMult = 1 + (this._threatLevel - 1) * SPEED_SCALE_PER_THREAT;
     mob.maxHp = Math.round(mob.maxHp * hpMult);

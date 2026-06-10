@@ -58,8 +58,8 @@ class Foreman extends Mob {
       // Move toward target
       this.direction = Math.atan2(this.targetY - this.y, this.targetX - this.x);
       this.isMoving = true;
-      this.x += dt * this.speed * this.speedMultiplier * Math.cos(this.direction);
-      this.y += dt * this.speed * this.speedMultiplier * Math.sin(this.direction);
+      this.x += dt * this.speed * this.speedMultiplier * this.slowMultiplier * Math.cos(this.direction);
+      this.y += dt * this.speed * this.speedMultiplier * this.slowMultiplier * Math.sin(this.direction);
 
       // Stop short of target mobs to avoid overlap
       const toTarget = Math.sqrt(
@@ -100,8 +100,8 @@ class Foreman extends Mob {
         this.wanderTargetX - this.x,
       );
       this.isMoving = true;
-      this.x += dt * this.speed * this.speedMultiplier * Math.cos(this.direction);
-      this.y += dt * this.speed * this.speedMultiplier * Math.sin(this.direction);
+      this.x += dt * this.speed * this.speedMultiplier * this.slowMultiplier * Math.cos(this.direction);
+      this.y += dt * this.speed * this.speedMultiplier * this.slowMultiplier * Math.sin(this.direction);
     }
 
     // Apply buff on cooldown

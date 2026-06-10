@@ -7,6 +7,8 @@ import {
   WEAPON_UPGRADE_TREES,
   WEAPON_DESCRIPTIONS,
   BASE_STATS_FACTORIES,
+} from '../shared/weapon-upgrades';
+import {
   TurretStats,
   SpringerStats,
   SpiderwebStats,
@@ -14,6 +16,7 @@ import {
 } from '../shared/weapon-upgrades';
 import {
   PLAYER_UPGRADES,
+  PLAYER_UPGRADE_MAX_LEVELS,
   SPEED_MULTS,
   CD_MULTS,
   RANGE_MULTS,
@@ -92,26 +95,6 @@ class Player extends GameObject {
 
   getWeaponEntry(type: string): WeaponStatsUnion | undefined {
     return this.weaponEntries[type];
-  }
-
-  getTurretStats(): TurretStats | undefined {
-    const e = this.weaponEntries['turret'];
-    return e?.type === 'turret' ? e.stats : undefined;
-  }
-
-  getSpringerStats(): SpringerStats | undefined {
-    const e = this.weaponEntries['springer'];
-    return e?.type === 'springer' ? e.stats : undefined;
-  }
-
-  getSpiderwebStats(): SpiderwebStats | undefined {
-    const e = this.weaponEntries['spiderweb'];
-    return e?.type === 'spiderweb' ? e.stats : undefined;
-  }
-
-  getCrossbowStats(): CrossbowStats | undefined {
-    const e = this.weaponEntries['crossbow'];
-    return e?.type === 'crossbow' ? e.stats : undefined;
   }
 
   // ── Player progression multipliers ──
@@ -239,12 +222,8 @@ class Player extends GameObject {
         this.upgradeWeapon(w);
       }
     }
-    // Max all player progression upgrades
-    const playerMaxLevels: Record<string, number> = {
-      movementSpeed: 3, cooldownReduction: 3, biggerRange: 3, damageUp: 3,
-      extraSlot: 1, fortify: 3, pickupRadius: 2, cascade: 4,
-    };
-    for (const [key, maxLvl] of Object.entries(playerMaxLevels)) {
+    // Max all player progression upgrades (use shared config)
+    for (const [key, maxLvl] of Object.entries(PLAYER_UPGRADE_MAX_LEVELS)) {
       const baseKey = `player_${key}`;
       this.playerUpgrades[baseKey] = maxLvl;
     }

@@ -1,15 +1,11 @@
 // ── Base palette ────────────────────────────────────────────
 
-export const BLACK = '#000000';
 export const WHITE = '#ffffff';
-export const GRAY = 'gray';
 export const DARK_GRAY = '#333333';
 export const RED_HP = '#e74c3c';
 export const GREEN_HP = '#2ecc71';
 export const BLUE_ACCENT = '#3498db';
 export const MINIMAP_TURRET = '#4488ff';
-
-export const ORANGE = '#e67e22';
 
 // ── Transparency overlays ───────────────────────────────────
 

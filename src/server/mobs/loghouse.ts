@@ -4,7 +4,6 @@ import Chainsawer from "./chainsawer";
 import Harvester from "./harvester";
 import Foreman from "./foreman";
 import { LOGHOUSE } from "../../shared/mob-configs";
-import { HP_SCALE_PER_THREAT, SPEED_SCALE_PER_THREAT } from "../../shared/wave-configs";
 
 const LUMBERJACK_SPAWN_INTERVAL = 3;
 
@@ -98,16 +97,7 @@ class Loghouse extends Mob {
     const y = this.y + Math.sin(angle) * dist;
 
     const type = pickMobType(threatLevel);
-    const mob = createMob(type, id, x, y, targetX, targetY);
-
-    // Apply threat scaling to spawned mob (HP rounded for display)
-    const hpMult = 1 + (threatLevel - 1) * HP_SCALE_PER_THREAT;
-    const spdMult = 1 + (threatLevel - 1) * SPEED_SCALE_PER_THREAT;
-    mob.maxHp = Math.round(mob.maxHp * hpMult);
-    mob.hp = mob.maxHp;
-    mob.speed = mob.speed * spdMult;
-
-    return mob;
+    return createMob(type, id, x, y, targetX, targetY);
   }
 }
 

@@ -13,6 +13,21 @@ import { BasicTurretConfig, CrossbowConfig, SpringerConfig, SpiderwebConfig } fr
 /** Union of all deployable types. Extended as new weapons added. */
 export type AnyDeployable = Turret | Springer | Spiderweb | Crossbow;
 
+/** Find the closest alive mob to `origin` within `maxRange` px. */
+function findClosestMob(mobs: Mob[], origin: { x: number; y: number; distanceTo(o: { x: number; y: number }): number }, maxRange: number): Mob | null {
+  let closest: Mob | null = null;
+  let closestDist = maxRange;
+  for (const mob of mobs) {
+    if (mob.hp <= 0) continue;
+    const dist = origin.distanceTo(mob);
+    if (dist <= closestDist) {
+      closestDist = dist;
+      closest = mob;
+    }
+  }
+  return closest;
+}
+
 /** Reset slow, apply spiderweb slows to mobs within web radius. */
 export function applySpiderwebSlow(mobs: Mob[], deployables: AnyDeployable[]): void {
   mobs.forEach(m => { m.slowMultiplier = 1; });
@@ -52,16 +67,7 @@ export function updateSpiders(dt: number, mobs: Mob[], deployables: AnyDeployabl
     }
 
     // Find nearest alive mob within web radius
-    let target: Mob | null = null;
-    let closestDist = web.attackRadius;
-    for (const mob of mobs) {
-      if (mob.hp <= 0) continue;
-      const dist = web.distanceTo(mob);
-      if (dist <= closestDist) {
-        closestDist = dist;
-        target = mob;
-      }
-    }
+    const target = findClosestMob(mobs, web, web.attackRadius);
 
     if (target) {
       const dir = Math.atan2(target.y - spider.y, target.x - spider.x);
@@ -102,16 +108,7 @@ export function updateTurrets(dt: number, mobs: Mob[], deployables: AnyDeployabl
     if (d.type !== 'turret') continue;
     const turret = d as Turret;
 
-    let closest: Mob | null = null;
-    let closestDist = turret.attackRadius;
-    for (const mob of mobs) {
-      if (mob.hp <= 0) continue;
-      const dist = turret.distanceTo(mob);
-      if (dist <= closestDist) {
-        closestDist = dist;
-        closest = mob;
-      }
-    }
+    const closest = findClosestMob(mobs, turret, turret.attackRadius);
     turret.aimDirection = closest
       ? Math.atan2(closest.y - turret.y, closest.x - turret.x)
       : turret.direction;
@@ -136,16 +133,7 @@ export function updateCrossbows(dt: number, mobs: Mob[], deployables: AnyDeploya
     if (d.type !== 'crossbow') continue;
     const crossbow = d as Crossbow;
 
-    let closest: Mob | null = null;
-    let closestDist = crossbow.attackRadius;
-    for (const mob of mobs) {
-      if (mob.hp <= 0) continue;
-      const dist = crossbow.distanceTo(mob);
-      if (dist <= closestDist) {
-        closestDist = dist;
-        closest = mob;
-      }
-    }
+    const closest = findClosestMob(mobs, crossbow, crossbow.attackRadius);
     crossbow.aimDirection = closest
       ? Math.atan2(closest.y - crossbow.y, closest.x - crossbow.x)
       : crossbow.direction;

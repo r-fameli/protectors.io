@@ -321,6 +321,7 @@ class Game {
         const count = Math.floor(Math.random() * 3);
         for (let i = 0; i < count; i++) {
           const mob = loghouse.spawnMob(loghouseThreat, Constants.MAP_SIZE / 2, Constants.MAP_SIZE / 2);
+          this.waveManager.applyThreatScaling(mob);
           this.mobs.push(mob);
         }
       }
