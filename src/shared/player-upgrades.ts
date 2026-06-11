@@ -210,3 +210,10 @@ export const CASCADE_CHANCES = [0, 0.05, 0.10, 0.15, 0.22];
 
 /** Max parallel bonus cooldowns per weapon type from Cascade. */
 export const MAX_BONUS_COOLDOWNS = 2;
+
+/**
+ * Weight multiplier for weapon-acquire choices (`acquire_springer`, etc.)
+ * relative to other upgrade types (weight=1). Lower = less likely to appear.
+ * 0.33 means acquire choices are ~3× less likely than a normal upgrade.
+ */
+export const ACQUIRE_WEIGHT = 0.33;

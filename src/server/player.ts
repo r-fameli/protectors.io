@@ -24,6 +24,7 @@ import {
   FORTIFY_MULTS,
   PICKUP_RADIUS_MULTS,
   CASCADE_CHANCES,
+  ACQUIRE_WEIGHT,
 } from '../shared/player-upgrades';
 
 const EXP_BASE_THRESHOLD = 100;
@@ -304,12 +305,25 @@ class Player extends GameObject {
       });
     }
 
-    // Shuffle and pick up to 3
-    for (let i = choices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [choices[i], choices[j]] = [choices[j], choices[i]];
+    // Weighted random pick without replacement.
+    // Acquire-a-new-weapon choices are weighted lower (ACQUIRE_WEIGHT=0.33, vs 1.0 for normal).
+    // This makes weapon unlocks ~3× less likely to appear than stat upgrades or weapon improvements.
+    const weights = choices.map(c => c.upgradeKey.startsWith('acquire_') ? ACQUIRE_WEIGHT : 1);
+    const selected: UpgradeChoice[] = [];
+    const available = choices.map((_, i) => i);
+
+    for (let r = 0; r < Math.min(3, available.length); r++) {
+      const totalWeight = available.reduce((sum, i) => sum + weights[i], 0);
+      let rand = Math.random() * totalWeight;
+      let pickIdx = 0;
+      for (let i = 0; i < available.length; i++) {
+        rand -= weights[available[i]];
+        if (rand <= 0) { pickIdx = i; break; }
+      }
+      selected.push(choices[available[pickIdx]]);
+      available.splice(pickIdx, 1);
     }
-    this.cachedUpgrades = choices.slice(0, 3);
+    this.cachedUpgrades = selected;
     return this.cachedUpgrades;
   }
 
